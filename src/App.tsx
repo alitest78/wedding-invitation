@@ -7,8 +7,9 @@ import { MusicPlayer } from './components/MusicPlayer';
 import { FloatingPetals } from './components/FloatingPetals';
 import { INITIAL_WEDDING, INITIAL_RSVPS } from './data/defaultWedding';
 import { WeddingDetails, RSVPResponse, MusicTrack, ThemeVariant } from './types';
-import { decodeWeddingFromURL } from './utils/cardUtils';
+import { decodeWeddingFromURL, isGuestModeFromURL } from './utils/cardUtils';
 import { THEME_PRESETS } from './utils/themePresets';
+import { Lock, Unlock } from 'lucide-react';
 
 export default function App() {
   const [wedding, setWedding] = useState<WeddingDetails>(() => {
@@ -33,6 +34,8 @@ export default function App() {
     return INITIAL_WEDDING;
   });
 
+  const [isGuestMode, setIsGuestMode] = useState<boolean>(() => isGuestModeFromURL());
+
   const [rsvps, setRsvps] = useState<RSVPResponse[]>(() => {
     const local = localStorage.getItem('wedding_rsvps');
     if (local) {
@@ -55,10 +58,12 @@ export default function App() {
 
   const currentTheme = THEME_PRESETS[wedding.theme] || THEME_PRESETS['emerald-gold'];
 
-  // Save changes to localStorage
+  // Save changes to localStorage and optionally open share modal
   const handleSaveWedding = (updated: WeddingDetails) => {
     setWedding(updated);
     localStorage.setItem('wedding_card_details', JSON.stringify(updated));
+    setShowEditModal(false);
+    setShowShareModal(true); // Automatically open share modal so the host can copy the new guest link!
   };
 
   const handleThemeChange = (theme: ThemeVariant) => {
@@ -126,6 +131,7 @@ export default function App() {
             onThemeChange={handleThemeChange}
             petalsActive={petalsActive}
             onTogglePetals={() => setPetalsActive(!petalsActive)}
+            isGuestMode={isGuestMode}
           />
         ) : (
           <WeddingCardView
@@ -139,6 +145,7 @@ export default function App() {
             onThemeChange={handleThemeChange}
             petalsActive={petalsActive}
             onTogglePetals={() => setPetalsActive(!petalsActive)}
+            isGuestMode={isGuestMode}
           />
         )}
       </main>

@@ -31,6 +31,7 @@ interface WeddingCardViewProps {
   onThemeChange?: (theme: ThemeVariant) => void;
   petalsActive: boolean;
   onTogglePetals: () => void;
+  isGuestMode?: boolean;
 }
 
 export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
@@ -44,6 +45,7 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
   onThemeChange,
   petalsActive,
   onTogglePetals,
+  isGuestMode = false,
 }) => {
   const [showThemePicker, setShowThemePicker] = useState(false);
   const [showCalendarMenu, setShowCalendarMenu] = useState(false);
@@ -108,71 +110,74 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
             <span className="hidden xs:inline">بازگشت به پاکت</span>
           </motion.button>
 
-          {/* Theme Switcher */}
-          <div className="relative">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.94 }}
-              id="card-theme-toggle-btn"
-              onClick={() => setShowThemePicker(!showThemePicker)}
-              className="flex items-center gap-1.5 text-xs text-[#F5F0E8] hover:bg-white/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer border border-white/10"
-              title="تغییر تم رنگی"
-            >
-              <Palette className="w-3.5 h-3.5 text-[#F5C042]" />
-              <span className="hidden sm:inline">پالت: {currentTheme.nameFa.split(' ')[0]}</span>
-            </motion.button>
+          {/* Theme Switcher (Host Only) */}
+          {!isGuestMode && (
+            <div className="relative">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.94 }}
+                id="card-theme-toggle-btn"
+                onClick={() => setShowThemePicker(!showThemePicker)}
+                className="flex items-center gap-1.5 text-xs text-[#F5F0E8] hover:bg-white/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer border border-white/10"
+                title="تغییر تم رنگی"
+              >
+                <Palette className="w-3.5 h-3.5 text-[#F5C042]" />
+                <span className="hidden sm:inline">پالت: {currentTheme.nameFa.split(' ')[0]}</span>
+              </motion.button>
 
-            <AnimatePresence>
-              {showThemePicker && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                  transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-                  className="absolute top-full right-0 mt-2 p-2 w-64 liquid-glass rounded-[24px] shadow-2xl z-50 space-y-1.5"
-                >
-                  <div className="text-[11px] font-semibold text-[#F5C042] px-2.5 py-1 border-b border-[#C5A46D]/20">
-                    انتخاب پالت رنگی کارت:
-                  </div>
-                  {Object.values(THEME_PRESETS).map((t) => (
-                    <motion.button
-                      key={t.id}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => {
-                        if (onThemeChange) onThemeChange(t.id);
-                        setShowThemePicker(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
-                        wedding.theme === t.id
-                          ? 'bg-gradient-to-r from-[#F5C042] to-[#C5A46D] text-[#181B16] font-bold shadow-md'
-                          : 'text-[#E0D8CA] hover:bg-white/10 hover:text-white'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="w-4 h-4 rounded-full border border-white/20 shadow-sm flex-shrink-0"
-                          style={{ backgroundColor: t.previewColor }}
-                        ></span>
-                        <span className="truncate">{t.nameFa}</span>
-                      </div>
-                    </motion.button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+              <AnimatePresence>
+                {showThemePicker && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                    className="absolute top-full right-0 mt-2 p-2 w-64 liquid-glass rounded-[24px] shadow-2xl z-50 space-y-1.5"
+                  >
+                    <div className="text-[11px] font-semibold text-[#F5C042] px-2.5 py-1 border-b border-[#C5A46D]/20">
+                      انتخاب پالت رنگی کارت:
+                    </div>
+                    {Object.values(THEME_PRESETS).map((t) => (
+                      <motion.button
+                        key={t.id}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => {
+                          if (onThemeChange) onThemeChange(t.id);
+                          setShowThemePicker(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                          wedding.theme === t.id
+                            ? 'bg-gradient-to-r from-[#F5C042] to-[#C5A46D] text-[#181B16] font-bold shadow-md'
+                            : 'text-[#E0D8CA] hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="w-4 h-4 rounded-full border border-white/20 shadow-sm flex-shrink-0"
+                            style={{ backgroundColor: t.previewColor }}
+                          ></span>
+                          <span className="truncate">{t.nameFa}</span>
+                        </div>
+                      </motion.button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
 
           {/* Toggle Petals */}
           <motion.button
             whileTap={{ scale: 0.92 }}
             id="card-toggle-petals-btn"
             onClick={onTogglePetals}
-            className={`hidden sm:flex items-center gap-1 text-xs px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
+            className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
               petalsActive ? 'text-[#F5C042] border border-[#C5A46D]/50 bg-black/20' : 'text-[#E0D8CA] hover:text-white'
             }`}
             title="بارش گلبرگ"
           >
             <Flower2 className="w-3.5 h-3.5 text-[#F5C042]" />
+            <span className="hidden sm:inline">گلبرگ</span>
           </motion.button>
         </div>
 
@@ -225,16 +230,18 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
             </div>
           )}
 
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.94 }}
-            id="card-edit-btn"
-            onClick={onOpenEditModal}
-            className="flex items-center gap-1.5 text-[#F5F0E8] hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full text-xs transition-colors cursor-pointer shadow"
-          >
-            <Edit3 className="w-3.5 h-3.5 text-[#F5C042]" />
-            <span className="hidden sm:inline">ویرایش</span>
-          </motion.button>
+          {!isGuestMode && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.94 }}
+              id="card-edit-btn"
+              onClick={onOpenEditModal}
+              className="flex items-center gap-1.5 text-[#F5F0E8] hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full text-xs transition-colors cursor-pointer shadow"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-[#F5C042]" />
+              <span className="hidden sm:inline">ویرایش</span>
+            </motion.button>
+          )}
 
           <motion.button
             whileHover={{ scale: 1.04 }}

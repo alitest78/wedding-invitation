@@ -14,6 +14,7 @@ interface EnvelopeViewProps {
   onThemeChange?: (theme: ThemeVariant) => void;
   petalsActive?: boolean;
   onTogglePetals?: () => void;
+  isGuestMode?: boolean;
 }
 
 export const EnvelopeView: React.FC<EnvelopeViewProps> = ({
@@ -25,6 +26,7 @@ export const EnvelopeView: React.FC<EnvelopeViewProps> = ({
   onThemeChange,
   petalsActive = true,
   onTogglePetals,
+  isGuestMode = false,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
@@ -98,61 +100,68 @@ export const EnvelopeView: React.FC<EnvelopeViewProps> = ({
         transition={{ type: 'spring', stiffness: 350, damping: 28 }}
         className="w-full max-w-3xl mx-auto flex flex-wrap items-center justify-between gap-2.5 z-30 mb-6 sm:mb-8 pt-1"
       >
-        {/* Left: Brand Badge & Theme Picker */}
+        {/* Left: Theme Picker (Only in Admin/Host Mode) */}
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.95 }}
-              id="theme-switcher-toggle-btn"
-              onClick={() => setShowThemePicker(!showThemePicker)}
-              className="flex items-center gap-1.5 liquid-glass-pill px-4 py-2 rounded-full text-xs text-[#1C221A] font-medium transition-all cursor-pointer shadow-md"
-              title="تغییر تم رنگی کارت"
-            >
-              <Palette className="w-3.5 h-3.5 text-[#B88728]" />
-              <span>پالت رنگی: {currentTheme.nameFa.split(' ')[0]}</span>
-            </motion.button>
+          {!isGuestMode ? (
+            <div className="relative">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.95 }}
+                id="theme-switcher-toggle-btn"
+                onClick={() => setShowThemePicker(!showThemePicker)}
+                className="flex items-center gap-1.5 liquid-glass-pill px-4 py-2 rounded-full text-xs text-[#1C221A] font-medium transition-all cursor-pointer shadow-md"
+                title="تغییر تم رنگی کارت"
+              >
+                <Palette className="w-3.5 h-3.5 text-[#B88728]" />
+                <span>پالت رنگی: {currentTheme.nameFa.split(' ')[0]}</span>
+              </motion.button>
 
-            {/* Theme Picker Dropdown (Liquid Glass Popover Style) */}
-            <AnimatePresence>
-              {showThemePicker && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.94 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.94 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                  className="absolute top-full right-0 mt-2 p-2 w-64 liquid-glass rounded-[24px] shadow-2xl z-50 space-y-1.5 border border-[#B89355]/30"
-                >
-                  <div className="text-[11px] font-bold text-[#946F29] px-2.5 py-1 border-b border-[#B89355]/20">
-                    انتخاب تم رنگی کارت:
-                  </div>
-                  {Object.values(THEME_PRESETS).map((t) => (
-                    <motion.button
-                      key={t.id}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => {
-                        if (onThemeChange) onThemeChange(t.id);
-                        setShowThemePicker(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all cursor-pointer ${
-                        wedding.theme === t.id
-                          ? 'bg-gradient-to-r from-[#B88728] to-[#946F29] text-white font-bold shadow-md'
-                          : 'text-[#2C3529] hover:bg-[#B89355]/15'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span
-                          className="w-4 h-4 rounded-full border border-black/15 shadow-sm flex-shrink-0"
-                          style={{ backgroundColor: t.previewColor }}
-                        ></span>
-                        <span className="truncate">{t.nameFa}</span>
-                      </div>
-                    </motion.button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+              {/* Theme Picker Dropdown (Liquid Glass Popover Style) */}
+              <AnimatePresence>
+                {showThemePicker && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.94 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.94 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                    className="absolute top-full right-0 mt-2 p-2 w-64 liquid-glass rounded-[24px] shadow-2xl z-50 space-y-1.5 border border-[#B89355]/30"
+                  >
+                    <div className="text-[11px] font-bold text-[#946F29] px-2.5 py-1 border-b border-[#B89355]/20">
+                      انتخاب تم رنگی کارت:
+                    </div>
+                    {Object.values(THEME_PRESETS).map((t) => (
+                      <motion.button
+                        key={t.id}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => {
+                          if (onThemeChange) onThemeChange(t.id);
+                          setShowThemePicker(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all cursor-pointer ${
+                          wedding.theme === t.id
+                            ? 'bg-gradient-to-r from-[#B88728] to-[#946F29] text-white font-bold shadow-md'
+                            : 'text-[#2C3529] hover:bg-[#B89355]/15'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className="w-4 h-4 rounded-full border border-black/15 shadow-sm flex-shrink-0"
+                            style={{ backgroundColor: t.previewColor }}
+                          ></span>
+                          <span className="truncate">{t.nameFa}</span>
+                        </div>
+                      </motion.button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 liquid-glass-pill px-3.5 py-1.5 rounded-full text-xs text-[#556251]">
+              <Sparkles className="w-3.5 h-3.5 text-[#B88728]" />
+              <span>دعوت‌نامه رسمی</span>
+            </div>
+          )}
 
           {/* Toggle Rose Petals */}
           <motion.button
@@ -160,28 +169,30 @@ export const EnvelopeView: React.FC<EnvelopeViewProps> = ({
             whileTap={{ scale: 0.95 }}
             id="toggle-petals-btn"
             onClick={onTogglePetals}
-            className={`hidden sm:flex items-center gap-1.5 liquid-glass-pill px-3.5 py-2 rounded-full text-xs font-medium transition-all cursor-pointer shadow-md ${
-              petalsActive ? 'border-[#B88728] text-[#B88728]' : 'text-[#475243]'
+            className={`flex items-center gap-1.5 liquid-glass-pill px-3.5 py-2 rounded-full text-xs font-medium transition-all cursor-pointer shadow-md ${
+              petalsActive ? 'border-[#B89355]/50 text-[#855E1C]' : 'text-[#556251]'
             }`}
             title="بارش گلبرگ و ذرات زرین"
           >
             <Flower2 className="w-3.5 h-3.5 text-[#B88728]" />
-            <span>بارش گلبرگ</span>
+            <span className="hidden sm:inline">بارش گلبرگ</span>
           </motion.button>
         </div>
 
-        {/* Right Actions: Edit & Share (Liquid Glass Capsule Buttons) */}
+        {/* Right Actions: Edit & Share */}
         <div className="flex items-center gap-2">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.95 }}
-            id="open-edit-modal-top-btn"
-            onClick={onEditClick}
-            className="flex items-center gap-1.5 liquid-glass-pill px-4 py-2 rounded-full text-xs text-[#1C221A] font-medium transition-all cursor-pointer shadow-md"
-          >
-            <Edit3 className="w-3.5 h-3.5 text-[#B88728]" />
-            <span>ویرایش مشخصات</span>
-          </motion.button>
+          {!isGuestMode && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.95 }}
+              id="open-edit-modal-top-btn"
+              onClick={onEditClick}
+              className="flex items-center gap-1.5 liquid-glass-pill px-4 py-2 rounded-full text-xs text-[#1C221A] font-medium transition-all cursor-pointer shadow-md"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-[#B88728]" />
+              <span>ویرایش مشخصات</span>
+            </motion.button>
+          )}
 
           <motion.button
             whileHover={{ scale: 1.04 }}

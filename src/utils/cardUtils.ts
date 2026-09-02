@@ -110,16 +110,56 @@ export function calculateTimeLeft(targetDateStr: string): TimeLeft {
 }
 
 // Encode state into URL query parameter safely for full sharability
-export function encodeWeddingToURL(wedding: WeddingDetails): string {
+export function encodeWeddingToURL(wedding: WeddingDetails, isGuest: boolean = true): string {
   try {
     const json = JSON.stringify(wedding);
     const base64 = btoa(encodeURIComponent(json));
-    const url = new URL(window.location.href);
+    const url = new URL(typeof window !== 'undefined' ? window.location.href : 'http://localhost:3000');
     url.searchParams.set('w', base64);
+    if (isGuest) {
+      url.searchParams.set('mode', 'guest');
+      url.searchParams.delete('admin');
+    } else {
+      url.searchParams.set('mode', 'admin');
+    }
     return url.toString();
   } catch (err) {
     console.error('Failed to encode wedding details into URL', err);
-    return window.location.href;
+    return typeof window !== 'undefined' ? window.location.href : '';
+  }
+}
+
+// Generate a locked Guest Link (no edit or theme switcher buttons)
+export function getGuestInvitationUrl(wedding: WeddingDetails): string {
+  return encodeWeddingToURL(wedding, true);
+}
+
+// Generate an Admin / Host Link (with full edit capabilities)
+export function getAdminInvitationUrl(wedding: WeddingDetails): string {
+  return encodeWeddingToURL(wedding, false);
+}
+
+export function isGuestModeFromURL(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode');
+    const admin = params.get('admin');
+    const guest = params.get('guest');
+
+    if (mode === 'admin' || admin === '1' || admin === 'true') {
+      return false;
+    }
+    if (mode === 'guest' || guest === '1' || guest === 'true') {
+      return true;
+    }
+    // If 'w' is present without explicit admin flag, default to locked guest view for security
+    if (params.get('w')) {
+      return true;
+    }
+    return false;
+  } catch (e) {
+    return false;
   }
 }
 
@@ -136,3 +176,4 @@ export function decodeWeddingFromURL(): WeddingDetails | null {
     return null;
   }
 }
+
