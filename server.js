@@ -43,8 +43,116 @@ function generateShortCode(length = 6) {
   return result;
 }
 
+// Helper function to shorten URL via multiple free public providers
+async function shortenWithExternalServices(longUrl, customAlias = '') {
+  // 1. Try TinyURL
+  try {
+    let tinyUrlEndpoint = `https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`;
+    if (customAlias) {
+      tinyUrlEndpoint += `&alias=${encodeURIComponent(customAlias)}`;
+    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(tinyUrlEndpoint, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const text = await res.text();
+      if (text.startsWith('http')) {
+        return { shortUrl: text.trim(), service: 'TinyURL' };
+      }
+    }
+  } catch (e) {
+    // try next service
+  }
+
+  // 2. Try is.gd
+  try {
+    let isgdEndpoint = `https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`;
+    if (customAlias) {
+      isgdEndpoint += `&shorturl=${encodeURIComponent(customAlias)}`;
+    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(isgdEndpoint, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const text = await res.text();
+      if (text.startsWith('http')) {
+        return { shortUrl: text.trim(), service: 'is.gd' };
+      }
+    }
+  } catch (e) {
+    // try next service
+  }
+
+  // 3. Try clck.ru
+  try {
+    const clckEndpoint = `https://clck.ru/--?url=${encodeURIComponent(longUrl)}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(clckEndpoint, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const text = await res.text();
+      if (text.startsWith('http')) {
+        return { shortUrl: text.trim(), service: 'clck.ru' };
+      }
+    }
+  } catch (e) {
+    // try next service
+  }
+
+  // 4. Try da.gd
+  try {
+    const dagdEndpoint = `https://da.gd/s?url=${encodeURIComponent(longUrl)}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(dagdEndpoint, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const text = await res.text();
+      if (text.startsWith('http')) {
+        return { shortUrl: text.trim(), service: 'da.gd' };
+      }
+    }
+  } catch (e) {
+    // fallback
+  }
+
+  return null;
+}
+
+// API: External URL Shortening Tool Endpoint
+app.post('/api/shorten', async (req, res) => {
+  try {
+    const { url, alias, service } = req.body;
+    if (!url) {
+      return res.status(400).json({ error: 'آدرس وارد نشده است' });
+    }
+
+    const shortened = await shortenWithExternalServices(url, alias);
+    if (shortened) {
+      return res.json({
+        success: true,
+        shortUrl: shortened.shortUrl,
+        service: shortened.service,
+      });
+    }
+
+    // Fallback: return original url
+    res.json({
+      success: false,
+      shortUrl: url,
+      message: 'سرویس‌های کوتاه کننده در دسترس نبودند، از لینک مستقیم استفاده شد.',
+    });
+  } catch (err) {
+    console.error('Error in URL shortener API:', err);
+    res.status(500).json({ error: 'خطا در کوتاه کردن لینک' });
+  }
+});
+
 // API: Save or Update Wedding Card & Generate Short ID
-app.post('/api/cards', (req, res) => {
+app.post('/api/cards', async (req, res) => {
   try {
     const { wedding, customSlug } = req.body;
     if (!wedding) {
@@ -72,13 +180,29 @@ app.post('/api/cards', (req, res) => {
     const host = req.get('host') || `localhost:${PORT}`;
     const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
     const baseUrl = `${protocol}://${host}`;
+    const directGuestUrl = `${baseUrl}/?c=${cardId}&mode=guest`;
+
+    // Attempt to automatically generate ultra-short TinyURL link
+    let ultraShortUrl = null;
+    let shortService = null;
+    try {
+      const shortened = await shortenWithExternalServices(directGuestUrl, customSlug);
+      if (shortened) {
+        ultraShortUrl = shortened.shortUrl;
+        shortService = shortened.service;
+      }
+    } catch (e) {
+      // ignore
+    }
 
     res.json({
       success: true,
       id: cardId,
-      guestUrl: `${baseUrl}/?c=${cardId}&mode=guest`,
+      guestUrl: directGuestUrl,
       adminUrl: `${baseUrl}/?c=${cardId}&mode=admin`,
       shortUrl: `${baseUrl}/?c=${cardId}`,
+      ultraShortUrl: ultraShortUrl || directGuestUrl,
+      shortService: shortService || 'Direct',
     });
   } catch (err) {
     console.error('Error saving card:', err);

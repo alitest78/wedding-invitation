@@ -4,6 +4,67 @@ import path from 'path';
 import fs from 'fs';
 import { defineConfig, Plugin } from 'vite';
 
+async function shortenWithExternalServices(longUrl: string, customAlias = '') {
+  // 1. Try TinyURL
+  try {
+    let tinyUrlEndpoint = `https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`;
+    if (customAlias) {
+      tinyUrlEndpoint += `&alias=${encodeURIComponent(customAlias)}`;
+    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(tinyUrlEndpoint, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const text = await res.text();
+      if (text.startsWith('http')) {
+        return { shortUrl: text.trim(), service: 'TinyURL' };
+      }
+    }
+  } catch (e) {
+    // try next
+  }
+
+  // 2. Try is.gd
+  try {
+    let isgdEndpoint = `https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`;
+    if (customAlias) {
+      isgdEndpoint += `&shorturl=${encodeURIComponent(customAlias)}`;
+    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(isgdEndpoint, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const text = await res.text();
+      if (text.startsWith('http')) {
+        return { shortUrl: text.trim(), service: 'is.gd' };
+      }
+    }
+  } catch (e) {
+    // try next
+  }
+
+  // 3. Try clck.ru
+  try {
+    const clckEndpoint = `https://clck.ru/--?url=${encodeURIComponent(longUrl)}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(clckEndpoint, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const text = await res.text();
+      if (text.startsWith('http')) {
+        return { shortUrl: text.trim(), service: 'clck.ru' };
+      }
+    }
+  } catch (e) {
+    // fallback
+  }
+
+  return null;
+}
+
 function cardsDevPlugin(): Plugin {
   const CARDS_FILE = path.resolve(__dirname, 'cards_storage.json');
   let cardsStore: Record<string, any> = {};
@@ -27,8 +88,31 @@ function cardsDevPlugin(): Plugin {
   return {
     name: 'cards-dev-api',
     configureServer(server) {
-      server.middlewares.use((req, res, next) => {
+      server.middlewares.use(async (req, res, next) => {
         const url = req.url || '';
+
+        // POST /api/shorten
+        if (req.method === 'POST' && url.startsWith('/api/shorten')) {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', async () => {
+            try {
+              const { url: longUrl, alias } = JSON.parse(body || '{}');
+              const shortened = await shortenWithExternalServices(longUrl, alias);
+              res.setHeader('Content-Type', 'application/json');
+              if (shortened) {
+                res.end(JSON.stringify({ success: true, shortUrl: shortened.shortUrl, service: shortened.service }));
+              } else {
+                res.end(JSON.stringify({ success: false, shortUrl: longUrl }));
+              }
+            } catch (err) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: 'خطا در کوتاه کردن لینک' }));
+            }
+          });
+          return;
+        }
 
         // POST /api/cards
         if (req.method === 'POST' && url.startsWith('/api/cards')) {
@@ -36,7 +120,7 @@ function cardsDevPlugin(): Plugin {
           req.on('data', chunk => {
             body += chunk;
           });
-          req.on('end', () => {
+          req.on('end', async () => {
             try {
               const parsed = JSON.parse(body || '{}');
               const { wedding, customSlug } = parsed;
@@ -63,14 +147,30 @@ function cardsDevPlugin(): Plugin {
               const host = req.headers.host || 'localhost:3000';
               const protocol = 'https';
               const baseUrl = `${protocol}://${host}`;
+              const directGuestUrl = `${baseUrl}/?c=${cardId}&mode=guest`;
+
+              let ultraShortUrl = directGuestUrl;
+              let shortService = 'Direct';
+
+              try {
+                const shortened = await shortenWithExternalServices(directGuestUrl, customSlug);
+                if (shortened) {
+                  ultraShortUrl = shortened.shortUrl;
+                  shortService = shortened.service;
+                }
+              } catch (e) {
+                // ignore
+              }
 
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify({
                 success: true,
                 id: cardId,
-                guestUrl: `${baseUrl}/?c=${cardId}&mode=guest`,
+                guestUrl: directGuestUrl,
                 adminUrl: `${baseUrl}/?c=${cardId}&mode=admin`,
-                shortUrl: `${baseUrl}/?c=${cardId}`
+                shortUrl: `${baseUrl}/?c=${cardId}`,
+                ultraShortUrl,
+                shortService
               }));
             } catch (err) {
               res.statusCode = 500;

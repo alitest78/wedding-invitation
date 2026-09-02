@@ -109,11 +109,46 @@ export function calculateTimeLeft(targetDateStr: string): TimeLeft {
   return { days, hours, minutes, seconds, isPast: false };
 }
 
+// Shorten any long URL using backend proxy with free shorteners (TinyURL, is.gd, clck.ru)
+export async function shortenUrlOnline(
+  longUrl: string,
+  alias?: string
+): Promise<{ shortUrl: string; service: string } | null> {
+  try {
+    const res = await fetch('/api/shorten', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: longUrl, alias }),
+    });
+    if (!res.ok) throw new Error('Shorten request failed');
+    const data = await res.json();
+    if (data && data.shortUrl) {
+      return { shortUrl: data.shortUrl, service: data.service || 'Shortener' };
+    }
+  } catch (e) {
+    // Direct client fallback to TinyURL API if backend proxy fails
+    try {
+      let endpoint = `https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`;
+      if (alias) endpoint += `&alias=${encodeURIComponent(alias)}`;
+      const clientRes = await fetch(endpoint);
+      if (clientRes.ok) {
+        const text = await clientRes.text();
+        if (text.startsWith('http')) {
+          return { shortUrl: text.trim(), service: 'TinyURL' };
+        }
+      }
+    } catch (err) {
+      console.warn('Direct TinyURL fallback failed', err);
+    }
+  }
+  return null;
+}
+
 // Save wedding to backend server with short ID
 export async function saveCardToServer(
   wedding: WeddingDetails,
   customSlug?: string
-): Promise<{ success: boolean; id: string; guestUrl: string; adminUrl: string } | null> {
+): Promise<{ success: boolean; id: string; guestUrl: string; adminUrl: string; ultraShortUrl?: string; shortService?: string } | null> {
   try {
     const res = await fetch('/api/cards', {
       method: 'POST',
