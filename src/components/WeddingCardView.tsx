@@ -95,7 +95,7 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
       {/* Top Floating Utility Navigation Dock (Apple Dynamic Island Capsule) */}
       <motion.div 
         layout
-        className="sticky top-3 z-30 mb-6 flex flex-wrap items-center justify-between gap-2.5 liquid-glass-pill px-4 py-2.5 rounded-full shadow-2xl text-[#F5F0E8]"
+        className="sticky top-3 z-30 mb-6 flex flex-wrap items-center justify-between gap-2.5 liquid-glass-pill px-4 py-2.5 rounded-full shadow-2xl text-[#1C221A] border border-[#B89355]/35"
       >
         <div className="flex items-center gap-2">
           {/* Back to Envelope */}
@@ -104,9 +104,9 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
             whileTap={{ scale: 0.94 }}
             id="re-envelope-btn"
             onClick={onCloseToEnvelope}
-            className="flex items-center gap-1.5 text-xs text-[#F5F0E8] hover:bg-white/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs text-[#1C221A] hover:bg-black/5 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer font-medium"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-[#F5C042]" />
+            <RotateCcw className="w-3.5 h-3.5 text-[#B88728]" />
             <span className="hidden xs:inline">بازگشت به پاکت</span>
           </motion.button>
 
@@ -118,10 +118,10 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
                 whileTap={{ scale: 0.94 }}
                 id="card-theme-toggle-btn"
                 onClick={() => setShowThemePicker(!showThemePicker)}
-                className="flex items-center gap-1.5 text-xs text-[#F5F0E8] hover:bg-white/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer border border-white/10"
+                className="flex items-center gap-1.5 text-xs text-[#1C221A] hover:bg-black/5 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer border border-[#B89355]/30 font-medium"
                 title="تغییر تم رنگی"
               >
-                <Palette className="w-3.5 h-3.5 text-[#F5C042]" />
+                <Palette className="w-3.5 h-3.5 text-[#B88728]" />
                 <span className="hidden sm:inline">پالت: {currentTheme.nameFa.split(' ')[0]}</span>
               </motion.button>
 
@@ -132,9 +132,9 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.95 }}
                     transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-                    className="absolute top-full right-0 mt-2 p-2 w-64 liquid-glass rounded-[24px] shadow-2xl z-50 space-y-1.5"
+                    className="absolute top-full right-0 mt-2 p-2 w-64 liquid-glass rounded-[24px] shadow-2xl z-50 space-y-1.5 border border-[#B89355]/30"
                   >
-                    <div className="text-[11px] font-semibold text-[#F5C042] px-2.5 py-1 border-b border-[#C5A46D]/20">
+                    <div className="text-[11px] font-bold text-[#946F29] px-2.5 py-1 border-b border-[#B89355]/20">
                       انتخاب پالت رنگی کارت:
                     </div>
                     {Object.values(THEME_PRESETS).map((t) => (
@@ -147,13 +147,13 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
                         }}
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
                           wedding.theme === t.id
-                            ? 'bg-gradient-to-r from-[#F5C042] to-[#C5A46D] text-[#181B16] font-bold shadow-md'
-                            : 'text-[#E0D8CA] hover:bg-white/10 hover:text-white'
+                            ? 'bg-gradient-to-r from-[#B88728] to-[#946F29] text-white font-bold shadow-md'
+                            : 'text-[#1C221A] hover:bg-[#B89355]/15'
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <span
-                            className="w-4 h-4 rounded-full border border-white/20 shadow-sm flex-shrink-0"
+                            className="w-4 h-4 rounded-full border border-black/15 shadow-sm flex-shrink-0"
                             style={{ backgroundColor: t.previewColor }}
                           ></span>
                           <span className="truncate">{t.nameFa}</span>
@@ -171,12 +171,14 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
             whileTap={{ scale: 0.92 }}
             id="card-toggle-petals-btn"
             onClick={onTogglePetals}
-            className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
-              petalsActive ? 'text-[#F5C042] border border-[#C5A46D]/50 bg-black/20' : 'text-[#E0D8CA] hover:text-white'
+            className={`flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-full transition-colors cursor-pointer ${
+              petalsActive 
+                ? 'text-[#855E1C] border border-[#B89355]/50 bg-[#B88728]/15 font-bold shadow-xs' 
+                : 'text-[#556251] hover:text-[#1C221A] hover:bg-black/5'
             }`}
             title="بارش گلبرگ"
           >
-            <Flower2 className="w-3.5 h-3.5 text-[#F5C042]" />
+            <Flower2 className="w-3.5 h-3.5 text-[#B88728]" />
             <span className="hidden sm:inline">گلبرگ</span>
           </motion.button>
         </div>
@@ -191,10 +193,10 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
                 whileTap={{ scale: 0.94 }}
                 id="add-to-calendar-btn"
                 onClick={() => setShowCalendarMenu(!showCalendarMenu)}
-                className="flex items-center gap-1.5 text-xs text-[#F5F0E8] hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer shadow"
+                className="flex items-center gap-1.5 text-xs text-[#1C221A] hover:bg-black/5 border border-[#B89355]/30 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer shadow-xs font-medium"
                 title="افزودن به تقویم گوگل و اپل"
               >
-                <CalendarPlus className="w-3.5 h-3.5 text-[#F5C042]" />
+                <CalendarPlus className="w-3.5 h-3.5 text-[#B88728]" />
                 <span className="hidden sm:inline">افزودن به تقویم</span>
               </motion.button>
 
@@ -205,14 +207,14 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.95 }}
                     transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-                    className="absolute top-full left-0 mt-2 p-2 w-56 liquid-glass rounded-[22px] shadow-2xl z-50 space-y-1"
+                    className="absolute top-full left-0 mt-2 p-2 w-56 liquid-glass rounded-[22px] shadow-2xl z-50 space-y-1 border border-[#B89355]/30 text-[#1C221A]"
                   >
                     <a
                       href={calendarLinks.googleCalendar}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setShowCalendarMenu(false)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-[#F5F0E8] hover:bg-white/10 transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-[#1C221A] hover:bg-[#B89355]/15 transition-colors font-medium"
                     >
                       <span>📅 تقویم گوگل (Google Calendar)</span>
                     </a>
@@ -220,7 +222,7 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
                       href={calendarLinks.icsDataUri}
                       download={`wedding-${wedding.brideName || 'card'}-${wedding.groomName || 'card'}.ics`}
                       onClick={() => setShowCalendarMenu(false)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-[#F5F0E8] hover:bg-white/10 transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-[#1C221A] hover:bg-[#B89355]/15 transition-colors font-medium"
                     >
                       <span>🍏 تقویم اپل / اوت‌لوک (.ics)</span>
                     </a>
@@ -236,9 +238,9 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
               whileTap={{ scale: 0.94 }}
               id="card-edit-btn"
               onClick={onOpenEditModal}
-              className="flex items-center gap-1.5 text-[#F5F0E8] hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full text-xs transition-colors cursor-pointer shadow"
+              className="flex items-center gap-1.5 text-[#1C221A] hover:bg-black/5 border border-[#B89355]/30 px-3.5 py-1.5 rounded-full text-xs transition-colors cursor-pointer shadow-xs font-medium"
             >
-              <Edit3 className="w-3.5 h-3.5 text-[#F5C042]" />
+              <Edit3 className="w-3.5 h-3.5 text-[#B88728]" />
               <span className="hidden sm:inline">ویرایش</span>
             </motion.button>
           )}
@@ -248,9 +250,9 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
             whileTap={{ scale: 0.94 }}
             id="card-share-btn"
             onClick={onOpenShareModal}
-            className="flex items-center gap-1.5 bg-gradient-to-r from-[#F5C042] via-[#E3A824] to-[#C5A46D] text-[#181B16] font-bold px-4 py-1.5 rounded-full text-xs shadow-md cursor-pointer"
+            className="flex items-center gap-1.5 bg-gradient-to-r from-[#C59B3F] via-[#B88728] to-[#946F29] text-white font-bold px-4.5 py-1.5 rounded-full text-xs shadow-md shadow-[#B88728]/25 cursor-pointer"
           >
-            <Share2 className="w-3.5 h-3.5 text-[#181B16]" />
+            <Share2 className="w-3.5 h-3.5 text-white" />
             <span>اشتراک</span>
           </motion.button>
 
@@ -258,10 +260,10 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
             whileTap={{ scale: 0.9 }}
             id="card-print-btn"
             onClick={handlePrint}
-            className="hidden md:flex items-center gap-1 text-xs text-[#E0D8CA] hover:text-white hover:bg-white/10 p-2 rounded-full transition-colors cursor-pointer"
+            className="hidden md:flex items-center gap-1 text-xs text-[#556251] hover:text-[#1C221A] hover:bg-black/5 p-2 rounded-full transition-colors cursor-pointer"
             title="چاپ کارت"
           >
-            <Printer className="w-3.5 h-3.5 text-[#F5C042]" />
+            <Printer className="w-3.5 h-3.5 text-[#B88728]" />
           </motion.button>
         </div>
       </motion.div>
@@ -302,17 +304,17 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
           {hasParentsSection && (
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 text-xs sm:text-sm font-vazir my-3">
               {hasGroomParents && (
-                <span className="liquid-glass px-4 py-1.5 rounded-full border border-white/10 shadow-sm">
+                <span className="liquid-glass px-4 py-1.5 rounded-full border border-[#B89355]/30 shadow-sm text-[#1C221A]">
                   خانواده محترم {wedding.groomParents}
                 </span>
               )}
               {hasGroomParents && hasBrideParents && (
-                <div className="w-7 h-7 rounded-full liquid-glass flex items-center justify-center border border-[#F5C042]/50 shadow-inner">
-                  <Heart className="w-3.5 h-3.5 text-[#F5C042] fill-[#F5C042]" />
+                <div className="w-7 h-7 rounded-full liquid-glass flex items-center justify-center border border-[#B88728]/50 shadow-inner">
+                  <Heart className="w-3.5 h-3.5 text-[#B88728] fill-[#B88728]" />
                 </div>
               )}
               {hasBrideParents && (
-                <span className="liquid-glass px-4 py-1.5 rounded-full border border-white/10 shadow-sm">
+                <span className="liquid-glass px-4 py-1.5 rounded-full border border-[#B89355]/30 shadow-sm text-[#1C221A]">
                   خانواده محترم {wedding.brideParents}
                 </span>
               )}

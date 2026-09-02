@@ -59,6 +59,7 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
   const [activeTab, setActiveTab] = useState<'couple' | 'event' | 'venue' | 'poem' | 'music' | 'wishes' | 'theme'>('couple');
   const [previewTrackId, setPreviewTrackId] = useState<string | null>(null);
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const [showUrlOption, setShowUrlOption] = useState(false);
   const [uploadSuccessMessage, setUploadSuccessMessage] = useState<string | null>(null);
   const [wishSearchQuery, setWishSearchQuery] = useState('');
   const [copiedWishes, setCopiedWishes] = useState(false);
@@ -695,10 +696,114 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                 </div>
               </div>
 
+              {/* Custom Audio Upload Section (No Link Required) */}
+              <div className="bg-[#B88728]/10 p-4 rounded-2xl border border-[#B89355]/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Music className="w-4 h-4 text-[#B88728]" />
+                    <span className="text-xs font-bold text-[#1C221A]">
+                      آپلود مستقیم آهنگ اختصاصی شما (از گوشی یا کامپیوتر)
+                    </span>
+                  </div>
+                  <span className="text-[10px] bg-[#B88728]/20 text-[#855E1C] px-2 py-0.5 rounded-full font-bold">
+                    بدون نیاز به لینک
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-[#556251] leading-relaxed">
+                  فایل صوتی مد نظرتان را انتخاب کنید؛ آهنگ مستقیماً روی کارت شما ذخیره شده و برای تمامی مهمانان با کیفیت عالی پخش خواهد شد.
+                </p>
+
+                {/* Upload Button */}
+                <div>
+                  <label className={`w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl text-xs font-bold cursor-pointer transition-all border shadow-sm ${
+                    isUploadingAudio 
+                      ? 'bg-amber-100 text-[#855E1C] border-[#B89355]/50 cursor-wait' 
+                      : 'bg-white hover:bg-amber-50 text-[#1C221A] border-[#B89355]/40 hover:border-[#B89355]'
+                  }`}>
+                    {isUploadingAudio ? (
+                      <Loader2 className="w-4 h-4 text-[#B88728] animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4 text-[#B88728]" />
+                    )}
+                    <span>
+                      {isUploadingAudio ? 'در حال ذخیره‌سازی دائمی آهنگ...' : 'انتخاب و آپلود فایل آهنگ (MP3 / M4A / WAV)'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      disabled={isUploadingAudio}
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {uploadSuccessMessage && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 p-3 rounded-xl font-medium"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>{uploadSuccessMessage}</span>
+                  </motion.div>
+                )}
+
+                {/* Active Custom Track Preview & Actions */}
+                {!MUSIC_TRACKS.some(t => t.src === formData.musicUrl) && (
+                  <div className="bg-white p-3 rounded-xl border border-emerald-300 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <button
+                        type="button"
+                        onClick={(e) => handleTogglePreview(e, {
+                          id: 'custom_active_preview',
+                          title: formData.musicTitle,
+                          artist: formData.musicArtist,
+                          src: formData.musicUrl
+                        })}
+                        className="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center flex-shrink-0 shadow-sm transition-transform hover:scale-105 cursor-pointer"
+                        title="تست شنیداری آهنگ اختصاصی آپلود شده"
+                      >
+                        {previewTrackId === 'custom_active_preview' ? (
+                          <Pause className="w-3.5 h-3.5 fill-current" />
+                        ) : (
+                          <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                        )}
+                      </button>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-[#1C221A] truncate flex items-center gap-1.5">
+                          <span>{formData.musicTitle}</span>
+                          <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.2 rounded-full">فعال</span>
+                        </div>
+                        <div className="text-[10px] text-[#556251] truncate">{formData.musicArtist}</div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const defaultTrack = MUSIC_TRACKS[0];
+                        setFormData((prev) => ({
+                          ...prev,
+                          musicUrl: defaultTrack.src,
+                          musicTitle: defaultTrack.title,
+                          musicArtist: defaultTrack.artist
+                        }));
+                        stopPreview();
+                      }}
+                      className="text-[11px] text-rose-600 hover:text-rose-800 self-end sm:self-auto cursor-pointer font-medium hover:underline"
+                    >
+                      بازگشت به آهنگ پیش‌فرض
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Track Selection List with Live Preview */}
               <div>
                 <label className="block text-xs font-bold text-[#1C221A] mb-2">
-                  انتخاب قطعه موسیقی (برای شنیدن روی دکمه پخش لمس کنید):
+                  یا انتخاب از قطعات سنتی و شاد ایرانی:
                 </label>
                 <div className="space-y-2">
                   {MUSIC_TRACKS.map((track) => {
@@ -766,93 +871,51 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                 </div>
               </div>
 
-              {/* Custom Audio Upload & Direct URL */}
-              <div className="pt-3 border-t border-[#B89355]/20 space-y-3">
-                <label className="block text-xs font-bold text-[#1C221A]">
-                  یا قرار دادن فایل صوتی دلخواه (آپلود دائمی یا لینک مستقیم):
-                </label>
-                
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-                  {/* File Upload Button */}
-                  <label className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium cursor-pointer transition-colors border border-[#B89355]/30 shadow-sm flex-shrink-0 ${
-                    isUploadingAudio ? 'bg-amber-100 text-[#855E1C] cursor-wait' : 'bg-white text-[#1C221A] hover:bg-amber-50'
-                  }`}>
-                    {isUploadingAudio ? (
-                      <Loader2 className="w-4 h-4 text-[#B88728] animate-spin" />
-                    ) : (
-                      <Upload className="w-4 h-4 text-[#B88728]" />
-                    )}
-                    <span>{isUploadingAudio ? 'در حال ذخیره‌سازی دائمی آهنگ...' : 'آپلود فایل صوتی (MP3/M4A)'}</span>
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      disabled={isUploadingAudio}
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                  </label>
+              {/* Optional Advanced Web Link Accordion */}
+              <div className="pt-2 border-t border-[#B89355]/20">
+                <button
+                  type="button"
+                  onClick={() => setShowUrlOption(!showUrlOption)}
+                  className="w-full flex items-center justify-between text-[11px] text-[#556251] hover:text-[#1C221A] py-1 cursor-pointer font-medium"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <LinkIcon className="w-3.5 h-3.5 text-[#B88728]" />
+                    <span>آیا مایلید از لینک مستقیم فایل صوتی در اینترنت استفاده کنید؟ (اختیاری)</span>
+                  </span>
+                  <span className="text-[10px] bg-black/5 px-2 py-0.5 rounded-full">
+                    {showUrlOption ? 'بستن' : 'نمایش'}
+                  </span>
+                </button>
 
-                  {/* Direct MP3 URL Input */}
-                  <div className="relative flex-1">
-                    <LinkIcon className="w-3.5 h-3.5 text-[#B88728] absolute right-3 top-1/2 -translate-y-1/2" />
+                {showUrlOption && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-2 p-3 bg-white/70 border border-[#B89355]/25 rounded-xl space-y-2"
+                  >
+                    <label className="block text-[11px] text-[#1C221A]">
+                      آدرس اینترنتی فایل صوتی (Direct MP3 URL):
+                    </label>
                     <input
                       type="url"
-                      value={formData.musicUrl.startsWith('synth://') || formData.musicUrl.startsWith('blob:') ? '' : formData.musicUrl}
+                      value={formData.musicUrl.startsWith('synth://') || formData.musicUrl.startsWith('/uploads/') ? '' : formData.musicUrl}
                       onChange={(e) => {
-                        const url = e.target.value;
-                        setFormData((prev) => ({
-                          ...prev,
-                          musicUrl: url || 'synth://shirazi',
-                          musicTitle: url ? 'آهنگ اختصاصی اینترنتی' : 'جینگو جینگ ساز میاد',
-                          musicArtist: 'موزیک انتخابی شما'
-                        }));
+                        const url = e.target.value.trim();
+                        if (url) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            musicUrl: url,
+                            musicTitle: 'موزیک انتخابی اینترنتی',
+                            musicArtist: 'فایل صوتی لینک شده'
+                          }));
+                        }
                       }}
-                      placeholder="یا آدرس مستقیم اینترنتی موزیک (https://...mp3)"
-                      className="w-full bg-white border border-[#B89355]/30 rounded-xl pr-9 pl-3 py-2 text-xs text-[#1C221A] focus:outline-none focus:border-[#B88728]"
+                      placeholder="https://example.com/song.mp3"
+                      className="w-full bg-white border border-[#B89355]/30 rounded-xl px-3 py-2 text-xs text-[#1C221A] focus:outline-none focus:border-[#B88728]"
                       dir="ltr"
                     />
-                  </div>
-                </div>
-
-                {uploadSuccessMessage && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-2 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl font-medium"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                    <span>{uploadSuccessMessage}</span>
                   </motion.div>
                 )}
-
-                <div className="text-[11px] text-[#556251] bg-white/70 p-3 rounded-xl border border-[#B89355]/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <button
-                      type="button"
-                      onClick={(e) => handleTogglePreview(e, {
-                        id: 'custom_active_preview',
-                        title: formData.musicTitle,
-                        artist: formData.musicArtist,
-                        src: formData.musicUrl
-                      })}
-                      className="w-7 h-7 rounded-full bg-[#B88728] text-white flex items-center justify-center flex-shrink-0 shadow-sm hover:scale-105 transition-transform"
-                      title="تست شنیداری قطعه انتخابی فعلی"
-                    >
-                      {previewTrackId === 'custom_active_preview' ? (
-                        <Pause className="w-3 h-3 fill-current" />
-                      ) : (
-                        <Play className="w-3 h-3 fill-current ml-0.5" />
-                      )}
-                    </button>
-                    <div className="truncate">
-                      <span className="font-medium">قطعه فعال کارت: </span>
-                      <strong className="text-[#1C221A]">{formData.musicTitle}</strong>
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-[#946F29] bg-[#B88728]/10 px-2 py-0.5 rounded-full self-start sm:self-auto">
-                    {formData.musicArtist}
-                  </span>
-                </div>
               </div>
             </div>
           )}

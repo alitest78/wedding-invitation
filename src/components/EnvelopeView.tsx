@@ -109,7 +109,7 @@ export const EnvelopeView: React.FC<EnvelopeViewProps> = ({
                 whileTap={{ scale: 0.95 }}
                 id="theme-switcher-toggle-btn"
                 onClick={() => setShowThemePicker(!showThemePicker)}
-                className="flex items-center gap-1.5 liquid-glass-pill px-4 py-2 rounded-full text-xs text-[#1C221A] font-medium transition-all cursor-pointer shadow-md"
+                className="flex items-center gap-1.5 liquid-glass-pill px-4 py-2 rounded-full text-xs text-[#1C221A] font-medium transition-all cursor-pointer shadow-md border border-[#B89355]/30"
                 title="تغییر تم رنگی کارت"
               >
                 <Palette className="w-3.5 h-3.5 text-[#B88728]" />
@@ -187,7 +187,7 @@ export const EnvelopeView: React.FC<EnvelopeViewProps> = ({
               whileTap={{ scale: 0.95 }}
               id="open-edit-modal-top-btn"
               onClick={onEditClick}
-              className="flex items-center gap-1.5 liquid-glass-pill px-4 py-2 rounded-full text-xs text-[#1C221A] font-medium transition-all cursor-pointer shadow-md"
+              className="flex items-center gap-1.5 liquid-glass-pill px-4 py-2 rounded-full text-xs text-[#1C221A] font-medium transition-all cursor-pointer shadow-md border border-[#B89355]/30"
             >
               <Edit3 className="w-3.5 h-3.5 text-[#B88728]" />
               <span>ویرایش مشخصات</span>

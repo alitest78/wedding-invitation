@@ -134,17 +134,28 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
 
     if (audioRef.current) {
       setIsUsingSynth(false);
-      audioRef.current.src = currentUrl;
+      if (audioRef.current.src !== currentUrl) {
+        audioRef.current.src = currentUrl;
+      }
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
             setIsPlaying(true);
           })
-          .catch((_err) => {
-            setIsUsingSynth(true);
-            persianAudioEngine.start(musicTitle);
-            setIsPlaying(true);
+          .catch((err) => {
+            // If autoplay was blocked by browser interaction policy, wait for user gesture
+            if (err && (err.name === 'NotAllowedError' || err.name === 'AbortError')) {
+              setIsPlaying(false);
+              return;
+            }
+            console.warn('Audio playback error:', err);
+            // Only fallback to synth if URL is completely inaccessible and not a user upload
+            if (!currentUrl.startsWith('/uploads/') && !currentUrl.startsWith('data:')) {
+              setIsUsingSynth(true);
+              persianAudioEngine.start(musicTitle);
+              setIsPlaying(true);
+            }
           });
       }
     }
