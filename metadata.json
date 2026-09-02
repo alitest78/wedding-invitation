@@ -1,0 +1,6 @@
+{
+  "name": "کارت دعوت عروسی دیجیتال | Persian Digital Wedding Card",
+  "description": "کارت دعوت عروسی دیجیتال تعاملی با پاکت متحرک، پخش موسیقی جینگو جینگ شیرازی، مسیریابی تالار و اشتراک‌گذاری در شبکه‌های اجتماعی",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

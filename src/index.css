@@ -1,0 +1,192 @@
+@import "tailwindcss";
+
+/* IranNastaliq Font CDN Fallbacks */
+@font-face {
+  font-family: 'IranNastaliq';
+  src: url('https://cdn.jsdelivr.net/gh/fontiran/iran-nastaliq/IranNastaliq.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/gh/fontiran/iran-nastaliq/IranNastaliq.woff') format('woff'),
+       url('https://cdn.jsdelivr.net/gh/rastikerdar/iran-nastaliq/IranNastaliq.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Vazir Font Fallback */
+@font-face {
+  font-family: 'Vazir';
+  src: url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/Vazir.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/Vazir.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vazir';
+  src: url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/Vazir-Bold.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/Vazir-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  body {
+    font-family: 'Vazirmatn', 'Vazir', system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Typography Classes */
+.font-vazir {
+  font-family: 'Vazirmatn', 'Vazir', system-ui, -apple-system, sans-serif;
+}
+
+.font-amiri {
+  font-family: 'Amiri', 'IranNastaliq', 'Aref Ruqaa', serif;
+  line-height: 1.8;
+}
+
+.font-nastaliq {
+  font-family: 'IranNastaliq', 'Amiri', cursive, serif;
+  line-height: 2.2;
+}
+
+.font-cinzel {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.15em;
+}
+
+.font-playfair {
+  font-family: 'Playfair Display', serif;
+}
+
+.font-aref {
+  font-family: 'Aref Ruqaa', 'Amiri', serif;
+}
+
+/* 24K Liquid Gold Foil Gradient */
+.gold-text-gradient {
+  background: linear-gradient(135deg, #FFF6D5 0%, #F5C042 25%, #E3A824 50%, #FFF0B8 75%, #C28212 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.rose-gold-gradient {
+  background: linear-gradient(135deg, #FFE4E6 0%, #FDA4AF 30%, #F43F5E 70%, #BE123C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.emerald-gold-gradient {
+  background: linear-gradient(135deg, #ECFDF5 0%, #6EE7B7 30%, #FBBF24 70%, #D97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.silver-ice-gradient {
+  background: linear-gradient(135deg, #FFFFFF 0%, #CBD5E1 40%, #94A3B8 70%, #E2E8F0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Metallic Shimmering Card Border */
+.luxe-border {
+  position: relative;
+}
+.luxe-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(245, 192, 66, 0.6), rgba(245, 192, 66, 0.1) 40%, rgba(245, 192, 66, 0.5) 70%, rgba(245, 192, 66, 0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* 3D Envelope Perspective */
+.perspective-1000 {
+  perspective: 1200px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* Persian Luxury Backgrounds */
+.theme-sage {
+  background-color: #F5F0E8;
+  background-image: 
+    radial-gradient(circle at 50% 0%, #FAF6EE 0%, #F5F0E8 50%, #ECE4D6 100%),
+    radial-gradient(rgba(197, 164, 109, 0.18) 1px, transparent 1px);
+  background-size: 100% 100%, 28px 28px;
+}
+
+.theme-emerald {
+  background: radial-gradient(circle at 50% 0%, #0c2b21 0%, #061812 60%, #030d0a 100%);
+}
+
+.theme-onyx {
+  background: radial-gradient(circle at 50% 0%, #171422 0%, #0a0910 60%, #050408 100%);
+}
+
+.theme-ruby {
+  background: radial-gradient(circle at 50% 0%, #300c19 0%, #19050c 60%, #0c0205 100%);
+}
+
+.theme-sapphire {
+  background: radial-gradient(circle at 50% 0%, #0e2246 0%, #081329 60%, #040915 100%);
+}
+
+.theme-cashmere {
+  background: radial-gradient(circle at 50% 0%, #fdfbf7 0%, #f4ede0 60%, #e8decb 100%);
+}
+
+/* Persian Floral Damask Pattern Overlay */
+.persian-pattern-overlay {
+  background-image: radial-gradient(rgba(212, 175, 55, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Glassmorphism Luxe */
+.glass-luxe {
+  background: rgba(23, 20, 34, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 13, 23, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #d4af37, #b45309);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #f59e0b;
+}
+
+/* Floating animation */
+@keyframes subtle-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-subtle-float {
+  animation: subtle-float 4s ease-in-out infinite;
+}
