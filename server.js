@@ -43,66 +43,50 @@ function generateShortCode(length = 6) {
   return result;
 }
 
-// Helper function to shorten URL via multiple free public providers
-async function shortenWithExternalServices(longUrl, customAlias = '') {
-  // 1. Try TinyURL
-  try {
-    let tinyUrlEndpoint = `https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`;
-    if (customAlias) {
-      tinyUrlEndpoint += `&alias=${encodeURIComponent(customAlias)}`;
-    }
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(tinyUrlEndpoint, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (res.ok) {
-      const text = await res.text();
-      if (text.startsWith('http')) {
-        return { shortUrl: text.trim(), service: 'TinyURL' };
+// Helper function to shorten URL via multiple public providers (prioritizing services unblocked in Iran)
+async function shortenWithExternalServices(longUrl, customAlias = '', preferredService = 'clck') {
+  // 1. Try clck.ru (Yandex Shortener - Fast, ultra-short, completely unblocked in Iran across all ISPs)
+  if (preferredService === 'clck' || preferredService === 'auto') {
+    try {
+      const clckEndpoint = `https://clck.ru/--?url=${encodeURIComponent(longUrl)}`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(clckEndpoint, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const text = await res.text();
+        if (text.startsWith('http')) {
+          return { shortUrl: text.trim(), service: 'clck.ru (بدون فیلتر در ایران)' };
+        }
       }
+    } catch (e) {
+      // try next
     }
-  } catch (e) {
-    // try next service
   }
 
-  // 2. Try is.gd
-  try {
-    let isgdEndpoint = `https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`;
-    if (customAlias) {
-      isgdEndpoint += `&shorturl=${encodeURIComponent(customAlias)}`;
-    }
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(isgdEndpoint, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (res.ok) {
-      const text = await res.text();
-      if (text.startsWith('http')) {
-        return { shortUrl: text.trim(), service: 'is.gd' };
+  // 2. Try is.gd (Accessible & short)
+  if (preferredService === 'isgd' || preferredService === 'auto' || preferredService === 'clck') {
+    try {
+      let isgdEndpoint = `https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`;
+      if (customAlias) {
+        isgdEndpoint += `&shorturl=${encodeURIComponent(customAlias)}`;
       }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(isgdEndpoint, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const text = await res.text();
+        if (text.startsWith('http')) {
+          return { shortUrl: text.trim(), service: 'is.gd (جهانی)' };
+        }
+      }
+    } catch (e) {
+      // try next
     }
-  } catch (e) {
-    // try next service
   }
 
-  // 3. Try clck.ru
-  try {
-    const clckEndpoint = `https://clck.ru/--?url=${encodeURIComponent(longUrl)}`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(clckEndpoint, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (res.ok) {
-      const text = await res.text();
-      if (text.startsWith('http')) {
-        return { shortUrl: text.trim(), service: 'clck.ru' };
-      }
-    }
-  } catch (e) {
-    // try next service
-  }
-
-  // 4. Try da.gd
+  // 3. Try da.gd
   try {
     const dagdEndpoint = `https://da.gd/s?url=${encodeURIComponent(longUrl)}`;
     const controller = new AbortController();
@@ -125,12 +109,12 @@ async function shortenWithExternalServices(longUrl, customAlias = '') {
 // API: External URL Shortening Tool Endpoint
 app.post('/api/shorten', async (req, res) => {
   try {
-    const { url, alias, service } = req.body;
+    const { url, alias, service = 'clck' } = req.body;
     if (!url) {
       return res.status(400).json({ error: 'آدرس وارد نشده است' });
     }
 
-    const shortened = await shortenWithExternalServices(url, alias);
+    const shortened = await shortenWithExternalServices(url, alias, service);
     if (shortened) {
       return res.json({
         success: true,
@@ -143,7 +127,8 @@ app.post('/api/shorten', async (req, res) => {
     res.json({
       success: false,
       shortUrl: url,
-      message: 'سرویس‌های کوتاه کننده در دسترس نبودند، از لینک مستقیم استفاده شد.',
+      service: 'لینک مستقیم',
+      message: 'از لینک مستقیم کارت استفاده شد.',
     });
   } catch (err) {
     console.error('Error in URL shortener API:', err);

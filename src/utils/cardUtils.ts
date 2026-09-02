@@ -109,36 +109,36 @@ export function calculateTimeLeft(targetDateStr: string): TimeLeft {
   return { days, hours, minutes, seconds, isPast: false };
 }
 
-// Shorten any long URL using backend proxy with free shorteners (TinyURL, is.gd, clck.ru)
+// Shorten URL using backend proxy with free shorteners unblocked in Iran (clck.ru, is.gd, da.gd)
 export async function shortenUrlOnline(
   longUrl: string,
-  alias?: string
+  alias?: string,
+  service: string = 'clck'
 ): Promise<{ shortUrl: string; service: string } | null> {
   try {
     const res = await fetch('/api/shorten', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: longUrl, alias }),
+      body: JSON.stringify({ url: longUrl, alias, service }),
     });
     if (!res.ok) throw new Error('Shorten request failed');
     const data = await res.json();
     if (data && data.shortUrl) {
-      return { shortUrl: data.shortUrl, service: data.service || 'Shortener' };
+      return { shortUrl: data.shortUrl, service: data.service || 'clck.ru (بدون فیلتر)' };
     }
   } catch (e) {
-    // Direct client fallback to TinyURL API if backend proxy fails
+    // Direct client fallback to clck.ru or is.gd (both unblocked in Iran)
     try {
-      let endpoint = `https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`;
-      if (alias) endpoint += `&alias=${encodeURIComponent(alias)}`;
-      const clientRes = await fetch(endpoint);
+      const clckEndpoint = `https://clck.ru/--?url=${encodeURIComponent(longUrl)}`;
+      const clientRes = await fetch(clckEndpoint);
       if (clientRes.ok) {
         const text = await clientRes.text();
         if (text.startsWith('http')) {
-          return { shortUrl: text.trim(), service: 'TinyURL' };
+          return { shortUrl: text.trim(), service: 'clck.ru (بدون فیلتر)' };
         }
       }
     } catch (err) {
-      console.warn('Direct TinyURL fallback failed', err);
+      console.warn('Direct clck.ru fallback failed', err);
     }
   }
   return null;

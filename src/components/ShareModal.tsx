@@ -18,7 +18,9 @@ import {
   Globe, 
   ExternalLink,
   Zap,
-  CheckCircle2
+  CheckCircle2,
+  Lock,
+  Wifi
 } from 'lucide-react';
 import { WeddingDetails } from '../types';
 import { 
@@ -37,6 +39,8 @@ interface ShareModalProps {
   onClose: () => void;
 }
 
+type ShortenerType = 'clck' | 'direct' | 'isgd' | 'dagd';
+
 export const ShareModal: React.FC<ShareModalProps> = ({ 
   wedding, 
   isOpen, 
@@ -45,8 +49,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   onClose 
 }) => {
   const [currentShortId, setCurrentShortId] = useState<string | undefined>(initialShortId);
+  const [selectedService, setSelectedService] = useState<ShortenerType>('clck');
   const [ultraShortUrl, setUltraShortUrl] = useState<string>('');
-  const [shortService, setShortService] = useState<string>('TinyURL');
+  const [shortServiceLabel, setShortServiceLabel] = useState<string>('clck.ru (بدون فیلتر در ایران)');
   const [customSlug, setCustomSlug] = useState<string>('');
   const [isCustomizing, setIsCustomizing] = useState<boolean>(false);
   const [isGeneratingShortLink, setIsGeneratingShortLink] = useState<boolean>(false);
@@ -56,97 +61,63 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [copiedText, setCopiedText] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showAdminLink, setShowAdminLink] = useState(false);
-  const [showDirectLink, setShowDirectLink] = useState(false);
 
-  // Generate & Shorten URL automatically when modal opens
+  // Generate URL automatically on open
   useEffect(() => {
     if (isOpen) {
-      setIsGeneratingShortLink(true);
-      saveCardToServer(wedding, currentShortId).then(async (res) => {
-        if (res && res.id) {
-          setCurrentShortId(res.id);
-          if (onShortIdChange) onShortIdChange(res.id);
-
-          if (res.ultraShortUrl && res.ultraShortUrl !== res.guestUrl) {
-            setUltraShortUrl(res.ultraShortUrl);
-            setShortService(res.shortService || 'TinyURL');
-            setIsGeneratingShortLink(false);
-          } else {
-            // Shorten the guestUrl via shortenUrlOnline
-            const directUrl = res.guestUrl || getGuestInvitationUrl(wedding, res.id);
-            const shortRes = await shortenUrlOnline(directUrl);
-            if (shortRes && shortRes.shortUrl) {
-              setUltraShortUrl(shortRes.shortUrl);
-              setShortService(shortRes.service);
-            } else {
-              setUltraShortUrl(directUrl);
-            }
-            setIsGeneratingShortLink(false);
-          }
-        } else {
-          // Fallback client-side shortening
-          const fallbackDirect = getGuestInvitationUrl(wedding);
-          const shortRes = await shortenUrlOnline(fallbackDirect);
-          if (shortRes && shortRes.shortUrl) {
-            setUltraShortUrl(shortRes.shortUrl);
-            setShortService(shortRes.service);
-          } else {
-            setUltraShortUrl(fallbackDirect);
-          }
-          setIsGeneratingShortLink(false);
-        }
-      }).catch(async () => {
-        const fallbackDirect = getGuestInvitationUrl(wedding);
-        const shortRes = await shortenUrlOnline(fallbackDirect);
-        if (shortRes && shortRes.shortUrl) {
-          setUltraShortUrl(shortRes.shortUrl);
-        } else {
-          setUltraShortUrl(fallbackDirect);
-        }
-        setIsGeneratingShortLink(false);
-      });
+      generateLink(selectedService, customSlug);
     }
   }, [isOpen, wedding]);
 
-  // Handle custom alias shortening (e.g. "ali-zahra-wedding")
-  const handleSaveCustomSlug = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customSlug.trim()) return;
+  const generateLink = async (serviceType: ShortenerType, slug?: string) => {
     setIsGeneratingShortLink(true);
     try {
-      const sanitized = customSlug.trim().toLowerCase().replace(/[^a-z0-9\-_]/g, '-');
-      const res = await saveCardToServer(wedding, sanitized);
-      if (res && res.id) {
+      const res = await saveCardToServer(wedding, slug || currentShortId);
+      const cardId = res?.id || currentShortId || '';
+      if (res?.id) {
         setCurrentShortId(res.id);
         if (onShortIdChange) onShortIdChange(res.id);
       }
-      
-      const directUrl = res?.guestUrl || getGuestInvitationUrl(wedding, res?.id || sanitized);
-      const shortRes = await shortenUrlOnline(directUrl, sanitized);
-      if (shortRes && shortRes.shortUrl) {
-        setUltraShortUrl(shortRes.shortUrl);
-        setShortService(shortRes.service);
-      } else if (res?.guestUrl) {
-        setUltraShortUrl(res.guestUrl);
+
+      const directUrl = res?.guestUrl || getGuestInvitationUrl(wedding, cardId);
+
+      if (serviceType === 'direct') {
+        setUltraShortUrl(directUrl);
+        setShortServiceLabel('لینک مستقیم کارت (بدون فیلتر)');
+        setIsGeneratingShortLink(false);
+        return;
       }
-      setIsCustomizing(false);
+
+      // External shortener (clck.ru, is.gd, da.gd)
+      const shortRes = await shortenUrlOnline(directUrl, slug || undefined, serviceType);
+      if (shortRes && shortRes.shortUrl && shortRes.shortUrl.startsWith('http')) {
+        setUltraShortUrl(shortRes.shortUrl);
+        setShortServiceLabel(shortRes.service);
+      } else {
+        // Safe fallback to direct domain
+        setUltraShortUrl(directUrl);
+        setShortServiceLabel('لینک مستقیم کارت (بدون فیلتر)');
+      }
     } catch (e) {
-      console.warn('Failed to save custom slug', e);
+      const directUrl = getGuestInvitationUrl(wedding, currentShortId);
+      setUltraShortUrl(directUrl);
+      setShortServiceLabel('لینک مستقیم کارت (بدون فیلتر)');
     } finally {
       setIsGeneratingShortLink(false);
     }
   };
 
-  // Re-shorten using a different service or refresh
-  const handleRegenerateShortUrl = async () => {
-    setIsGeneratingShortLink(true);
-    const directUrl = getGuestInvitationUrl(wedding, currentShortId);
-    const shortRes = await shortenUrlOnline(directUrl, customSlug || undefined);
-    if (shortRes && shortRes.shortUrl) {
-      setUltraShortUrl(shortRes.shortUrl);
-      setShortService(shortRes.service);
-    }
-    setIsGeneratingShortLink(false);
+  const handleSwitchService = (service: ShortenerType) => {
+    setSelectedService(service);
+    generateLink(service, customSlug);
+  };
+
+  const handleSaveCustomSlug = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customSlug.trim()) return;
+    const sanitized = customSlug.trim().toLowerCase().replace(/[^a-z0-9\-_]/g, '-');
+    await generateLink(selectedService, sanitized);
+    setIsCustomizing(false);
   };
 
   if (!isOpen) return null;
@@ -158,7 +129,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     ? getAdminInvitationUrl(wedding, currentShortId) 
     : '';
 
-  // Use the ultra-short URL for social shares and guest invitations
+  // Use the active unblocked URL for social shares and guest invitations
   const activeShareUrl = ultraShortUrl || directGuestUrl;
   const socialLinks = getSocialShareLinks(wedding, activeShareUrl);
 
@@ -168,12 +139,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     navigator.clipboard.writeText(activeShareUrl);
     setCopiedUltraShort(true);
     setTimeout(() => setCopiedUltraShort(false), 2500);
-  };
-
-  const handleCopyDirectLink = () => {
-    navigator.clipboard.writeText(directGuestUrl);
-    setCopiedDirectLink(true);
-    setTimeout(() => setCopiedDirectLink(false), 2500);
   };
 
   const handleCopyAdminLink = () => {
@@ -216,7 +181,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         className="relative w-full max-w-lg bg-[#FAF6EE] rounded-[32px] p-5 sm:p-8 text-[#1C221A] shadow-2xl overflow-y-auto max-h-[92vh] font-vazir border border-[#B89355]/30"
         id="share-modal-container"
       >
-        {/* Apple Close Button */}
+        {/* Close Button */}
         <motion.button
           whileTap={{ scale: 0.88 }}
           id="close-share-modal-btn"
@@ -229,40 +194,78 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         {/* Modal Header */}
         <div className="text-center mb-5">
           <div className="font-cinzel text-[10px] text-[#946F29] tracking-[0.28em] uppercase mb-1 font-bold">
-            ULTRA-SHORT LINK SHORTENER & SHARING
+            UNBLOCKED SHORT LINK & SHARING
           </div>
           <div className="w-12 h-12 rounded-2xl bg-[#F0E6D2] mx-auto flex items-center justify-center text-[#B88728] mb-2.5 shadow-inner border border-[#B89355]/30">
-            <Zap className="w-6 h-6 fill-current text-[#B88728]" />
+            <ShieldCheck className="w-6 h-6 text-emerald-600" />
           </div>
           <h3 className="font-amiri text-2xl sm:text-3xl font-bold text-[#1C221A]">
             لینک کوتاه کارت عروسی
           </h3>
-          <p className="text-xs text-[#556251] mt-1">
-            لینک فوق‌العاده کوتاه و کم‌حجم با ابزار کوتاه کننده TinyURL و is.gd
+          <p className="text-xs text-[#556251] mt-1 flex items-center justify-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>بدون فیلتر و با سرعت بالا در تمام اپراتورهای ایران (همراه اول، ایرانسل، رایتل و مخابرات)</span>
           </p>
         </div>
 
-        {/* Main Ultra-Short Link Card */}
+        {/* Shortener Provider Selector Tabs */}
+        <div className="mb-3.5 bg-white/70 p-1.5 rounded-2xl border border-[#B89355]/25 flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => handleSwitchService('clck')}
+            className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+              selectedService === 'clck'
+                ? 'bg-[#B88728] text-white shadow-sm'
+                : 'text-[#556251] hover:text-[#1C221A] hover:bg-white/50'
+            }`}
+          >
+            <Zap className="w-3 h-3" />
+            <span>clck.ru (کوتاه بدون فیلتر)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSwitchService('direct')}
+            className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+              selectedService === 'direct'
+                ? 'bg-[#B88728] text-white shadow-sm'
+                : 'text-[#556251] hover:text-[#1C221A] hover:bg-white/50'
+            }`}
+          >
+            <Globe className="w-3 h-3" />
+            <span>دامنه مستقیم کارت</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSwitchService('isgd')}
+            className={`py-1.5 px-2.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+              selectedService === 'isgd'
+                ? 'bg-[#B88728] text-white shadow-sm'
+                : 'text-[#556251] hover:text-[#1C221A] hover:bg-white/50'
+            }`}
+          >
+            <span>is.gd</span>
+          </button>
+        </div>
+
+        {/* Main Unblocked Short Link Card */}
         <div className="bg-gradient-to-br from-[#FFF9EE] to-[#F5EBD7] border-2 border-[#B88728]/60 rounded-2xl p-4 sm:p-5 mb-4 shadow-md relative overflow-hidden">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-1.5 text-xs font-bold text-[#855E1C]">
               <Sparkles className="w-4 h-4 text-[#B88728]" />
-              <span>لینک کوتاه تولید شده (آماده ارسال):</span>
+              <span>لینک کوتاه اختصاصی مهمانان:</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                <span>{shortService}</span>
+                <span>بدون نیاز به فیلترشکن</span>
               </span>
               <span className="text-[10px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-full border border-amber-300">
                 {urlLength} کاراکتر
               </span>
             </div>
           </div>
-
-          <p className="text-[11px] text-[#556251] mb-3 leading-relaxed">
-            این آدرس کوتاه برای پیامک (SMS)، بیو و استوری اینستاگرام، و پیام‌رسان‌ها بهینه‌سازی شده است:
-          </p>
 
           <div className="flex items-center gap-2 mb-2.5">
             <div className="relative w-full">
@@ -274,7 +277,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               {isGeneratingShortLink && (
                 <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-[#B88728] bg-white/95 px-2 py-1 rounded-md shadow-sm border border-[#B89355]/20">
                   <RefreshCw className="w-3 h-3 animate-spin" />
-                  <span>در حال کوتاه کردن با سرویس آنلاین...</span>
+                  <span>در حال ایجاد لینک کوتاه...</span>
                 </div>
               )}
             </div>
@@ -293,13 +296,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
-                  <span>کپی لینک کوتاه</span>
+                  <span>کپی لینک</span>
                 </>
               )}
             </motion.button>
           </div>
 
-          {/* Action Bar: Custom Name & Refresh Shortener */}
+          {/* Action Bar: Custom Name & Refresh */}
           <div className="pt-2 border-t border-[#B89355]/20 flex items-center justify-between gap-2 flex-wrap text-[11px]">
             <button
               type="button"
@@ -307,18 +310,18 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               className="text-[#855E1C] hover:text-[#5B3E0C] font-bold flex items-center gap-1 cursor-pointer"
             >
               <Edit2 className="w-3 h-3" />
-              <span>{isCustomizing ? 'بستن تنظیم نام دلخواه' : 'ساخت لینک کوتاه با نام دلخواه (مثلاً tinyurl.com/ali-zahra)'}</span>
+              <span>{isCustomizing ? 'بستن تنظیم نام دلخواه' : 'تنظیم آدرس دلخواه (مثلاً ali-zahra)'}</span>
             </button>
 
             <button
               type="button"
-              onClick={handleRegenerateShortUrl}
+              onClick={() => generateLink(selectedService, customSlug)}
               disabled={isGeneratingShortLink}
               className="text-[#556251] hover:text-[#1C221A] flex items-center gap-1 cursor-pointer disabled:opacity-50"
-              title="تلاش مجدد برای کوتاه کردن با سرویس دیگر"
+              title="تولید مجدد لینک"
             >
               <RefreshCw className={`w-3 h-3 ${isGeneratingShortLink ? 'animate-spin' : ''}`} />
-              <span>کوتاه‌سازی مجدد</span>
+              <span>تازه‌سازی</span>
             </button>
           </div>
 
@@ -333,28 +336,23 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 className="mt-3 pt-3 border-t border-[#B89355]/20"
               >
                 <label className="block text-[11px] text-[#855E1C] font-semibold mb-1">
-                  نام انگلیسی دلخواه برای انتهای لینک کوتاه:
+                  شناسه دلخواه انگلیسی برای لینک:
                 </label>
                 <div className="flex items-center gap-2">
-                  <div className="relative w-full">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-[#855E1C] font-bold">
-                      tinyurl.com/
-                    </span>
-                    <input
-                      type="text"
-                      value={customSlug}
-                      onChange={(e) => setCustomSlug(e.target.value)}
-                      placeholder="ali-maryam-wedding"
-                      dir="ltr"
-                      className="w-full bg-white border border-[#B89355]/35 rounded-xl pl-24 pr-3 py-2 text-xs text-[#1C221A] font-mono focus:outline-none"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={customSlug}
+                    onChange={(e) => setCustomSlug(e.target.value)}
+                    placeholder="ali-maryam-wedding"
+                    dir="ltr"
+                    className="w-full bg-white border border-[#B89355]/35 rounded-xl px-3 py-2 text-xs text-[#1C221A] font-mono focus:outline-none"
+                  />
                   <button
                     type="submit"
                     disabled={isGeneratingShortLink || !customSlug.trim()}
                     className="bg-[#B88728] hover:bg-[#946F29] text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex-shrink-0 disabled:opacity-50"
                   >
-                    {isGeneratingShortLink ? 'در حال ثبت...' : 'ساخت لینک کوتاه'}
+                    {isGeneratingShortLink ? 'در حال ثبت...' : 'ثبت نام'}
                   </button>
                 </div>
               </motion.form>
@@ -362,7 +360,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           </AnimatePresence>
         </div>
 
-        {/* Smart Mobile Native Share Button */}
+        {/* Native Mobile Share Button */}
         <motion.button
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.96 }}
@@ -482,7 +480,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               className="my-3 p-4 bg-white border border-[#B89355]/30 rounded-2xl text-center shadow-md"
             >
               <div className="text-xs text-[#946F29] font-bold mb-2">
-                بارکد اختصاصی لینک کوتاه (اسکن با دوربین):
+                بارکد اختصاصی لینک بدون فیلتر (اسکن با دوربین):
               </div>
               <div className="inline-block p-3 bg-[#FAF6EE] rounded-2xl shadow-sm border border-[#B89355]/30">
                 <img
@@ -497,54 +495,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Direct Server URL Accordion (Optional) */}
-        <div className="mt-3 pt-3 border-t border-[#B89355]/20">
-          <button
-            type="button"
-            onClick={() => setShowDirectLink(!showDirectLink)}
-            className="w-full flex items-center justify-between text-xs text-[#556251] hover:text-[#1C221A] font-semibold cursor-pointer py-1"
-          >
-            <span className="flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-[#B88728]" />
-              <span>مشاهده آدرس مستقیم سرور (بدون کوتاه کننده)</span>
-            </span>
-            <span className="text-[10px] bg-black/5 px-2 py-0.5 rounded-full">
-              {showDirectLink ? 'بستن' : 'نمایش'}
-            </span>
-          </button>
-
-          <AnimatePresence>
-            {showDirectLink && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-2 p-3 bg-white/70 border border-[#B89355]/25 rounded-2xl"
-              >
-                <div className="flex items-center gap-2">
-                  <input
-                    readOnly
-                    value={directGuestUrl}
-                    className="w-full bg-white border border-[#B89355]/30 rounded-xl px-2.5 py-1.5 text-[11px] text-[#1C221A] font-mono text-left focus:outline-none select-all"
-                  />
-                  <motion.button
-                    whileTap={{ scale: 0.92 }}
-                    onClick={handleCopyDirectLink}
-                    className="flex items-center gap-1 bg-white hover:bg-amber-50 text-[#855E1C] border border-[#B89355]/35 px-3 py-1.5 rounded-xl text-xs flex-shrink-0 transition-colors cursor-pointer font-medium"
-                  >
-                    {copiedDirectLink ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                    <span>{copiedDirectLink ? 'کپی شد' : 'کپی'}</span>
-                  </motion.button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
 
         {/* Host/Admin Link Section (Collapsible Accordion) */}
         <div className="mt-2 pt-2 border-t border-[#B89355]/20">

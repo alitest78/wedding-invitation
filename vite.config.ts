@@ -4,58 +4,59 @@ import path from 'path';
 import fs from 'fs';
 import { defineConfig, Plugin } from 'vite';
 
-async function shortenWithExternalServices(longUrl: string, customAlias = '') {
-  // 1. Try TinyURL
-  try {
-    let tinyUrlEndpoint = `https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`;
-    if (customAlias) {
-      tinyUrlEndpoint += `&alias=${encodeURIComponent(customAlias)}`;
-    }
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(tinyUrlEndpoint, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (res.ok) {
-      const text = await res.text();
-      if (text.startsWith('http')) {
-        return { shortUrl: text.trim(), service: 'TinyURL' };
+async function shortenWithExternalServices(longUrl: string, customAlias = '', preferredService = 'clck') {
+  // 1. Try clck.ru (Unblocked in Iran)
+  if (preferredService === 'clck' || preferredService === 'auto') {
+    try {
+      const clckEndpoint = `https://clck.ru/--?url=${encodeURIComponent(longUrl)}`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(clckEndpoint, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const text = await res.text();
+        if (text.startsWith('http')) {
+          return { shortUrl: text.trim(), service: 'clck.ru (بدون فیلتر در ایران)' };
+        }
       }
+    } catch (e) {
+      // try next
     }
-  } catch (e) {
-    // try next
   }
 
   // 2. Try is.gd
-  try {
-    let isgdEndpoint = `https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`;
-    if (customAlias) {
-      isgdEndpoint += `&shorturl=${encodeURIComponent(customAlias)}`;
-    }
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(isgdEndpoint, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (res.ok) {
-      const text = await res.text();
-      if (text.startsWith('http')) {
-        return { shortUrl: text.trim(), service: 'is.gd' };
+  if (preferredService === 'isgd' || preferredService === 'auto' || preferredService === 'clck') {
+    try {
+      let isgdEndpoint = `https://is.gd/create.php?format=simple&url=${encodeURIComponent(longUrl)}`;
+      if (customAlias) {
+        isgdEndpoint += `&shorturl=${encodeURIComponent(customAlias)}`;
       }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(isgdEndpoint, { signal: controller.signal });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const text = await res.text();
+        if (text.startsWith('http')) {
+          return { shortUrl: text.trim(), service: 'is.gd (جهانی)' };
+        }
+      }
+    } catch (e) {
+      // try next
     }
-  } catch (e) {
-    // try next
   }
 
-  // 3. Try clck.ru
+  // 3. Try da.gd
   try {
-    const clckEndpoint = `https://clck.ru/--?url=${encodeURIComponent(longUrl)}`;
+    const dagdEndpoint = `https://da.gd/s?url=${encodeURIComponent(longUrl)}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(clckEndpoint, { signal: controller.signal });
+    const res = await fetch(dagdEndpoint, { signal: controller.signal });
     clearTimeout(timeout);
     if (res.ok) {
       const text = await res.text();
       if (text.startsWith('http')) {
-        return { shortUrl: text.trim(), service: 'clck.ru' };
+        return { shortUrl: text.trim(), service: 'da.gd' };
       }
     }
   } catch (e) {
