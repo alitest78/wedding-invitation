@@ -7,7 +7,17 @@ import { MusicPlayer } from './components/MusicPlayer';
 import { FloatingPetals } from './components/FloatingPetals';
 import { INITIAL_WEDDING, INITIAL_RSVPS } from './data/defaultWedding';
 import { WeddingDetails, RSVPResponse, MusicTrack, ThemeVariant } from './types';
-import { decodeWeddingFromURL, isGuestModeFromURL, getCardIdFromURL, fetchCardFromServer, saveCardToServer } from './utils/cardUtils';
+import { 
+  decodeWeddingFromURL, 
+  isGuestModeFromURL, 
+  getCardIdFromURL, 
+  fetchCardFromServer, 
+  saveCardToServer,
+  fetchRSVPsFromServer,
+  saveRSVPToServer,
+  likeRSVPOnServer,
+  deleteRSVPOnServer
+} from './utils/cardUtils';
 import { THEME_PRESETS } from './utils/themePresets';
 import { Lock, Unlock } from 'lucide-react';
 
@@ -22,6 +32,11 @@ export default function App() {
         if (parsed.musicUrl && parsed.musicUrl.includes('musicdel.ir')) {
           parsed.musicUrl = 'synth://shirazi';
           parsed.musicArtist = 'موسیقی شاد شیرازی (سنتور، تار و تمبک ۶/۸)';
+        }
+        if (parsed.musicUrl && parsed.musicUrl.startsWith('blob:')) {
+          parsed.musicUrl = 'synth://shirazi';
+          parsed.musicTitle = 'جینگو جینگ ساز میاد';
+          parsed.musicArtist = 'موسیقی شاد شیرازی';
         }
         if (parsed.dressCode === 'کد پوشش: رسمی و مجلسی (رنگ‌های شاد و پاستلی)') {
           parsed.dressCode = '';
@@ -54,12 +69,10 @@ export default function App() {
   }, []);
 
   const [rsvps, setRsvps] = useState<RSVPResponse[]>(() => {
-
     const local = localStorage.getItem('wedding_rsvps');
     if (local) {
       try {
         const parsed: RSVPResponse[] = JSON.parse(local);
-        // Filter out legacy mock demo items
         return parsed.filter((item) => item.id !== '1' && item.id !== '2' && item.id !== '3');
       } catch (e) {
         console.error('Failed to parse local RSVPs', e);
@@ -67,6 +80,16 @@ export default function App() {
     }
     return INITIAL_RSVPS;
   });
+
+  // Fetch live RSVPs from backend storage on load
+  useEffect(() => {
+    fetchRSVPsFromServer().then((serverRsvps) => {
+      if (serverRsvps && serverRsvps.length > 0) {
+        setRsvps(serverRsvps);
+        localStorage.setItem('wedding_rsvps', JSON.stringify(serverRsvps));
+      }
+    });
+  }, []);
 
   const [isOpen, setIsOpen] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -101,7 +124,7 @@ export default function App() {
     localStorage.setItem('wedding_card_details', JSON.stringify(updated));
   };
 
-  const handleAddRSVP = (newRsvp: Omit<RSVPResponse, 'id' | 'createdAt' | 'likes'>) => {
+  const handleAddRSVP = async (newRsvp: Omit<RSVPResponse, 'id' | 'createdAt' | 'likes'>) => {
     const rsvpItem: RSVPResponse = {
       ...newRsvp,
       id: Date.now().toString(),
@@ -111,12 +134,51 @@ export default function App() {
     const updated = [rsvpItem, ...rsvps];
     setRsvps(updated);
     localStorage.setItem('wedding_rsvps', JSON.stringify(updated));
+
+    // Save to server
+    try {
+      const serverUpdated = await saveRSVPToServer(newRsvp);
+      if (serverUpdated) {
+        setRsvps(serverUpdated);
+        localStorage.setItem('wedding_rsvps', JSON.stringify(serverUpdated));
+      }
+    } catch (err) {
+      console.warn('Error saving RSVP to server', err);
+    }
   };
 
-  const handleLikeRSVP = (id: string) => {
+  const handleLikeRSVP = async (id: string) => {
     const updated = rsvps.map((r) => (r.id === id ? { ...r, likes: (r.likes || 0) + 1 } : r));
     setRsvps(updated);
     localStorage.setItem('wedding_rsvps', JSON.stringify(updated));
+
+    // Sync like with server
+    try {
+      const serverUpdated = await likeRSVPOnServer(id);
+      if (serverUpdated) {
+        setRsvps(serverUpdated);
+        localStorage.setItem('wedding_rsvps', JSON.stringify(serverUpdated));
+      }
+    } catch (err) {
+      console.warn('Error liking RSVP on server', err);
+    }
+  };
+
+  const handleDeleteRSVP = async (id: string) => {
+    const updated = rsvps.filter((r) => r.id !== id);
+    setRsvps(updated);
+    localStorage.setItem('wedding_rsvps', JSON.stringify(updated));
+
+    // Delete from server
+    try {
+      const serverUpdated = await deleteRSVPOnServer(id);
+      if (serverUpdated) {
+        setRsvps(serverUpdated);
+        localStorage.setItem('wedding_rsvps', JSON.stringify(serverUpdated));
+      }
+    } catch (err) {
+      console.warn('Error deleting RSVP from server', err);
+    }
   };
 
   const handleEnvelopeOpen = () => {
@@ -195,6 +257,8 @@ export default function App() {
       <EditCardModal
         isOpen={showEditModal}
         wedding={wedding}
+        rsvps={rsvps}
+        onDeleteRSVP={handleDeleteRSVP}
         onSave={handleSaveWedding}
         onClose={() => setShowEditModal(false)}
       />
@@ -204,6 +268,7 @@ export default function App() {
         isOpen={showShareModal}
         wedding={wedding}
         shortId={activeShortId}
+        isGuestMode={isGuestMode}
         onShortIdChange={(id) => setActiveShortId(id)}
         onClose={() => setShowShareModal(false)}
       />

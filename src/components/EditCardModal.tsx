@@ -22,16 +22,27 @@ import {
   Repeat,
   Zap,
   Check,
-  Link as LinkIcon
+  Link as LinkIcon,
+  MessageSquareHeart,
+  Trash2,
+  Users,
+  CheckCircle2,
+  XCircle,
+  Search,
+  Copy,
+  Loader2
 } from 'lucide-react';
-import { WeddingDetails, ThemeVariant, MusicTrack } from '../types';
+import { WeddingDetails, ThemeVariant, MusicTrack, RSVPResponse } from '../types';
 import { MUSIC_TRACKS, POEM_PRESETS, CITY_COORDINATES, INITIAL_WEDDING } from '../data/defaultWedding';
 import { THEME_PRESETS } from '../utils/themePresets';
 import { persianAudioEngine } from '../utils/persianAudioEngine';
+import { uploadAudioFile, toPersianDigits } from '../utils/cardUtils';
 
 interface EditCardModalProps {
   isOpen: boolean;
   wedding: WeddingDetails;
+  rsvps?: RSVPResponse[];
+  onDeleteRSVP?: (id: string) => void;
   onSave: (updated: WeddingDetails) => void;
   onClose: () => void;
 }
@@ -39,12 +50,18 @@ interface EditCardModalProps {
 export const EditCardModal: React.FC<EditCardModalProps> = ({
   isOpen,
   wedding,
+  rsvps = [],
+  onDeleteRSVP,
   onSave,
   onClose,
 }) => {
   const [formData, setFormData] = useState<WeddingDetails>({ ...wedding });
-  const [activeTab, setActiveTab] = useState<'couple' | 'event' | 'venue' | 'poem' | 'music' | 'theme'>('couple');
+  const [activeTab, setActiveTab] = useState<'couple' | 'event' | 'venue' | 'poem' | 'music' | 'wishes' | 'theme'>('couple');
   const [previewTrackId, setPreviewTrackId] = useState<string | null>(null);
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const [uploadSuccessMessage, setUploadSuccessMessage] = useState<string | null>(null);
+  const [wishSearchQuery, setWishSearchQuery] = useState('');
+  const [copiedWishes, setCopiedWishes] = useState(false);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Sync formData when wedding prop updates
@@ -108,16 +125,28 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
     }));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setFormData((prev) => ({
-        ...prev,
-        musicUrl: url,
-        musicTitle: file.name.replace(/\.[^/.]+$/, ''),
-        musicArtist: 'فایل صوتی اختصاصی شما'
-      }));
+    if (!file) return;
+
+    setIsUploadingAudio(true);
+    setUploadSuccessMessage(null);
+    try {
+      const res = await uploadAudioFile(file);
+      if (res && res.url) {
+        setFormData((prev) => ({
+          ...prev,
+          musicUrl: res.url,
+          musicTitle: res.title || file.name.replace(/\.[^/.]+$/, ''),
+          musicArtist: 'فایل صوتی بارگذاری شده شما'
+        }));
+        setUploadSuccessMessage(`آهنگ «${res.title}» با موفقیت ذخیره و برای کارت تنظیم شد.`);
+        setTimeout(() => setUploadSuccessMessage(null), 6000);
+      }
+    } catch (err) {
+      console.error('Failed to upload audio file', err);
+    } finally {
+      setIsUploadingAudio(false);
     }
   };
 
@@ -133,12 +162,37 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
     }
   };
 
+  // RSVP statistics
+  const attendingGuests = rsvps.filter(r => r.attending === 'yes');
+  const notAttendingGuests = rsvps.filter(r => r.attending === 'no');
+  const totalHeadcount = attendingGuests.reduce((sum, item) => sum + (item.guestCount || 1), 0);
+
+  const filteredWishes = rsvps.filter(item => 
+    !wishSearchQuery.trim() || 
+    item.guestName.toLowerCase().includes(wishSearchQuery.trim().toLowerCase()) ||
+    item.congratulationMessage.toLowerCase().includes(wishSearchQuery.trim().toLowerCase())
+  );
+
+  const handleCopyAllWishes = () => {
+    if (rsvps.length === 0) return;
+    const summary = `💌 لیست پیام‌های شادباش و مهمانان جشن عروسی ${formData.brideName} و ${formData.groomName}:
+آمار کلی: ${toPersianDigits(attendingGuests.length)} مهمان اعلام حضور کرده‌اند (مجموعاً ${toPersianDigits(totalHeadcount)} نفر)
+
+` + rsvps.map((r, i) => `${i + 1}. ${r.guestName} (${r.attending === 'yes' ? `حاضر - ${toPersianDigits(r.guestCount)} نفر` : 'عدم امکان حضور'}):
+"${r.congratulationMessage}"`).join('\n\n');
+
+    navigator.clipboard.writeText(summary);
+    setCopiedWishes(true);
+    setTimeout(() => setCopiedWishes(false), 2500);
+  };
+
   const tabs = [
     { id: 'couple', label: 'عروس و داماد', icon: Heart },
     { id: 'event', label: 'زمان و تاریخ', icon: Calendar },
     { id: 'venue', label: 'تالار و نقشه', icon: MapPin },
     { id: 'poem', label: 'شعر و متن', icon: BookOpen },
     { id: 'music', label: 'موسیقی', icon: Music },
+    { id: 'wishes', label: `پیام‌ها و مهمانان (${toPersianDigits(rsvps.length)})`, icon: MessageSquareHeart },
     { id: 'theme', label: 'تم و ظاهر', icon: Palette },
   ] as const;
 
@@ -715,17 +769,24 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
               {/* Custom Audio Upload & Direct URL */}
               <div className="pt-3 border-t border-[#B89355]/20 space-y-3">
                 <label className="block text-xs font-bold text-[#1C221A]">
-                  یا قرار دادن فایل صوتی دلخواه (آپلود یا لینک مستقیم):
+                  یا قرار دادن فایل صوتی دلخواه (آپلود دائمی یا لینک مستقیم):
                 </label>
                 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                   {/* File Upload Button */}
-                  <label className="flex items-center justify-center gap-2 bg-white px-4 py-2.5 rounded-xl text-xs text-[#1C221A] font-medium cursor-pointer hover:bg-amber-50 transition-colors border border-[#B89355]/30 shadow-sm flex-shrink-0">
-                    <Upload className="w-4 h-4 text-[#B88728]" />
-                    <span>آپلود فایل صوتی (MP3/M4A)</span>
+                  <label className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium cursor-pointer transition-colors border border-[#B89355]/30 shadow-sm flex-shrink-0 ${
+                    isUploadingAudio ? 'bg-amber-100 text-[#855E1C] cursor-wait' : 'bg-white text-[#1C221A] hover:bg-amber-50'
+                  }`}>
+                    {isUploadingAudio ? (
+                      <Loader2 className="w-4 h-4 text-[#B88728] animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4 text-[#B88728]" />
+                    )}
+                    <span>{isUploadingAudio ? 'در حال ذخیره‌سازی دائمی آهنگ...' : 'آپلود فایل صوتی (MP3/M4A)'}</span>
                     <input
                       type="file"
                       accept="audio/*"
+                      disabled={isUploadingAudio}
                       onChange={handleFileUpload}
                       className="hidden"
                     />
@@ -753,17 +814,158 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                   </div>
                 </div>
 
-                <div className="text-[11px] text-[#556251] bg-white/60 p-2.5 rounded-xl border border-[#B89355]/20 flex items-center justify-between">
-                  <span className="font-medium truncate">
-                    قطعه انتخابی فعال: <strong className="text-[#1C221A]">{formData.musicTitle}</strong>
+                {uploadSuccessMessage && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl font-medium"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>{uploadSuccessMessage}</span>
+                  </motion.div>
+                )}
+
+                <div className="text-[11px] text-[#556251] bg-white/70 p-3 rounded-xl border border-[#B89355]/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <button
+                      type="button"
+                      onClick={(e) => handleTogglePreview(e, {
+                        id: 'custom_active_preview',
+                        title: formData.musicTitle,
+                        artist: formData.musicArtist,
+                        src: formData.musicUrl
+                      })}
+                      className="w-7 h-7 rounded-full bg-[#B88728] text-white flex items-center justify-center flex-shrink-0 shadow-sm hover:scale-105 transition-transform"
+                      title="تست شنیداری قطعه انتخابی فعلی"
+                    >
+                      {previewTrackId === 'custom_active_preview' ? (
+                        <Pause className="w-3 h-3 fill-current" />
+                      ) : (
+                        <Play className="w-3 h-3 fill-current ml-0.5" />
+                      )}
+                    </button>
+                    <div className="truncate">
+                      <span className="font-medium">قطعه فعال کارت: </span>
+                      <strong className="text-[#1C221A]">{formData.musicTitle}</strong>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-[#946F29] bg-[#B88728]/10 px-2 py-0.5 rounded-full self-start sm:self-auto">
+                    {formData.musicArtist}
                   </span>
-                  <span className="text-[10px] text-[#946F29]">{formData.musicArtist}</span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Tab 6: Themes */}
+          {/* Tab 6: Wishes & RSVPs Management */}
+          {activeTab === 'wishes' && (
+            <div className="space-y-4 animate-in fade-in duration-150">
+              {/* Stats Bar */}
+              <div className="grid grid-cols-3 gap-2.5">
+                <div className="bg-white/80 p-3 rounded-2xl border border-[#B89355]/25 text-center shadow-sm">
+                  <div className="text-[10px] text-[#556251] font-medium mb-0.5">کل پیام‌ها</div>
+                  <div className="text-lg font-bold font-mono text-[#1C221A] tabular-nums">
+                    {toPersianDigits(rsvps.length)}
+                  </div>
+                </div>
+
+                <div className="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200 text-center shadow-sm">
+                  <div className="text-[10px] text-emerald-700 font-medium mb-0.5">حاضرین قطعی</div>
+                  <div className="text-lg font-bold font-mono text-emerald-800 tabular-nums">
+                    {toPersianDigits(attendingGuests.length)} <span className="text-[10px] font-normal font-vazir">({toPersianDigits(totalHeadcount)} نفر)</span>
+                  </div>
+                </div>
+
+                <div className="bg-rose-50/80 p-3 rounded-2xl border border-rose-200 text-center shadow-sm">
+                  <div className="text-[10px] text-rose-700 font-medium mb-0.5">عذرخواهی</div>
+                  <div className="text-lg font-bold font-mono text-rose-800 tabular-nums">
+                    {toPersianDigits(notAttendingGuests.length)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Search & Actions Header */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-3.5 h-3.5 text-[#B88728] absolute right-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={wishSearchQuery}
+                    onChange={(e) => setWishSearchQuery(e.target.value)}
+                    placeholder="جستجو در نام مهمان یا متن پیام..."
+                    className="w-full bg-white border border-[#B89355]/30 rounded-xl pr-9 pl-3 py-2 text-xs text-[#1C221A] focus:outline-none focus:border-[#B88728]"
+                  />
+                </div>
+
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  type="button"
+                  onClick={handleCopyAllWishes}
+                  disabled={rsvps.length === 0}
+                  className="flex items-center gap-1.5 bg-white hover:bg-amber-50 text-[#1C221A] border border-[#B89355]/30 px-3 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer shadow-sm flex-shrink-0 disabled:opacity-40"
+                  title="کپی کردن متن تمام پیام‌ها برای چاپ یا ارسال"
+                >
+                  <Copy className="w-3.5 h-3.5 text-[#B88728]" />
+                  <span>{copiedWishes ? 'کپی شد!' : 'کپی لیست'}</span>
+                </motion.button>
+              </div>
+
+              {/* Wishes List */}
+              <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                {filteredWishes.length === 0 ? (
+                  <div className="text-center py-8 bg-white/60 rounded-2xl border border-dashed border-[#B89355]/30 text-xs text-[#556251]">
+                    {rsvps.length === 0 ? 'هنوز پیامی ثبت نشده است.' : 'پیامی با این عبارت یافت نشد.'}
+                  </div>
+                ) : (
+                  filteredWishes.map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-white p-3.5 rounded-2xl border border-[#B89355]/20 shadow-sm flex items-start justify-between gap-3 hover:border-[#B89355]/40 transition-colors"
+                    >
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-xs text-[#1C221A]">{item.guestName}</span>
+                          {item.attending === 'yes' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium">
+                              <CheckCircle2 className="w-2.5 h-2.5" />
+                              <span>حضور دارند ({toPersianDigits(item.guestCount || 1)} نفر)</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-medium">
+                              <XCircle className="w-2.5 h-2.5" />
+                              <span>امکان حضور ندارند</span>
+                            </span>
+                          )}
+                          <span className="text-[10px] text-[#556251]/70">{item.createdAt}</span>
+                        </div>
+                        <p className="text-xs text-[#333E2F] leading-relaxed break-words">
+                          {item.congratulationMessage}
+                        </p>
+                      </div>
+
+                      {onDeleteRSVP && (
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`آیا از حذف پیام «${item.guestName}» اطمینان دارید؟`)) {
+                              onDeleteRSVP(item.id);
+                            }
+                          }}
+                          className="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0 transition-colors cursor-pointer"
+                          title="حذف این پیام"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </motion.button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Tab 7: Themes */}
           {activeTab === 'theme' && (
             <div className="space-y-3 animate-in fade-in duration-150">
               <label className="block text-xs font-semibold text-[#1C221A] mb-2">

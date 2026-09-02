@@ -9,7 +9,18 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Ensure upload directory exists
+const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+// Serve uploads statically
+app.use('/uploads', express.static(UPLOADS_DIR));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Persistent Storage for Wedding Cards
 const CARDS_FILE = path.join(__dirname, 'cards_storage.json');
@@ -30,6 +41,28 @@ function saveStoreToFile() {
     fs.writeFileSync(CARDS_FILE, JSON.stringify(cardsStore, null, 2), 'utf-8');
   } catch (e) {
     console.error('Error saving cards storage file:', e);
+  }
+}
+
+// Persistent Storage for RSVPs and Guestbook Messages
+const RSVPS_FILE = path.join(__dirname, 'rsvps_storage.json');
+let rsvpsStore = [];
+
+try {
+  if (fs.existsSync(RSVPS_FILE)) {
+    const raw = fs.readFileSync(RSVPS_FILE, 'utf-8');
+    rsvpsStore = JSON.parse(raw);
+  }
+} catch (e) {
+  console.error('Error reading rsvps storage file:', e);
+  rsvpsStore = [];
+}
+
+function saveRsvpsToFile() {
+  try {
+    fs.writeFileSync(RSVPS_FILE, JSON.stringify(rsvpsStore, null, 2), 'utf-8');
+  } catch (e) {
+    console.error('Error saving rsvps storage file:', e);
   }
 }
 
@@ -203,6 +236,106 @@ app.get('/api/cards/:id', (req, res) => {
     return res.status(404).json({ error: 'کارت مورد نظر یافت نشد' });
   }
   res.json({ success: true, wedding: card.wedding, updatedAt: card.updatedAt });
+});
+
+// API: Upload Audio File (Permanent storage)
+app.post('/api/upload-audio', (req, res) => {
+  try {
+    const { data, filename = 'custom-music.mp3' } = req.body;
+    if (!data) {
+      return res.status(400).json({ error: 'داده صوتی ارسال نشده است' });
+    }
+
+    // Extract base64 content
+    let base64Data = data;
+    let ext = '.mp3';
+    if (data.includes(';base64,')) {
+      const parts = data.split(';base64,');
+      const mime = parts[0];
+      base64Data = parts[1];
+      if (mime.includes('audio/mp4') || mime.includes('audio/m4a') || mime.includes('audio/x-m4a')) {
+        ext = '.m4a';
+      } else if (mime.includes('audio/wav') || mime.includes('audio/x-wav')) {
+        ext = '.wav';
+      } else if (mime.includes('audio/ogg')) {
+        ext = '.ogg';
+      } else if (mime.includes('audio/aac')) {
+        ext = '.aac';
+      }
+    }
+
+    const uniqueId = `audio_${Date.now()}_${generateShortCode(4)}${ext}`;
+    const filePath = path.join(UPLOADS_DIR, uniqueId);
+    
+    fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+
+    const publicUrl = `/uploads/${uniqueId}`;
+    res.json({
+      success: true,
+      url: publicUrl,
+      filename: filename || uniqueId,
+    });
+  } catch (err) {
+    console.error('Error uploading audio file:', err);
+    res.status(500).json({ error: 'خطا در ذخیره‌سازی فایل صوتی' });
+  }
+});
+
+// API: Get All RSVPs / Wishes
+app.get('/api/rsvps', (req, res) => {
+  res.json({ success: true, rsvps: rsvpsStore });
+});
+
+// API: Submit RSVP / Wish
+app.post('/api/rsvps', (req, res) => {
+  try {
+    const { guestName, attending, guestCount, congratulationMessage } = req.body;
+    if (!guestName || !guestName.trim()) {
+      return res.status(400).json({ error: 'نام مهمان الزامی است' });
+    }
+
+    const newRsvp = {
+      id: Date.now().toString(),
+      guestName: guestName.trim(),
+      attending: attending || 'yes',
+      guestCount: attending === 'yes' ? (Number(guestCount) || 1) : 0,
+      congratulationMessage: (congratulationMessage || '').trim() || 'با آرزوی خوشبختی و شادکامی برای عروس و داماد عزیز 🌸',
+      createdAt: 'همین الان',
+      likes: 1,
+    };
+
+    rsvpsStore = [newRsvp, ...rsvpsStore];
+    saveRsvpsToFile();
+
+    res.json({ success: true, rsvps: rsvpsStore, newRsvp });
+  } catch (err) {
+    console.error('Error saving RSVP:', err);
+    res.status(500).json({ error: 'خطا در ثبت پیام' });
+  }
+});
+
+// API: Like an RSVP
+app.post('/api/rsvps/like', (req, res) => {
+  try {
+    const { id } = req.body;
+    rsvpsStore = rsvpsStore.map(r => r.id === id ? { ...r, likes: (r.likes || 0) + 1 } : r);
+    saveRsvpsToFile();
+    res.json({ success: true, rsvps: rsvpsStore });
+  } catch (err) {
+    res.status(500).json({ error: 'خطا در ثبت لایک' });
+  }
+});
+
+// API: Delete an RSVP (for host in settings)
+app.delete('/api/rsvps/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    rsvpsStore = rsvpsStore.filter(r => r.id !== id);
+    saveRsvpsToFile();
+    res.json({ success: true, rsvps: rsvpsStore });
+  } catch (err) {
+    res.status(500).json({ error: 'خطا در حذف پیام' });
+  }
 });
 
 // Short URL Route Redirection (/c/:id -> /?c=:id)

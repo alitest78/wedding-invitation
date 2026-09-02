@@ -35,6 +35,7 @@ interface ShareModalProps {
   wedding: WeddingDetails;
   isOpen: boolean;
   shortId?: string;
+  isGuestMode?: boolean;
   onShortIdChange?: (id: string) => void;
   onClose: () => void;
 }
@@ -45,6 +46,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   wedding, 
   isOpen, 
   shortId: initialShortId,
+  isGuestMode = false,
   onShortIdChange,
   onClose 
 }) => {
@@ -496,56 +498,58 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           )}
         </AnimatePresence>
 
-        {/* Host/Admin Link Section (Collapsible Accordion) */}
-        <div className="mt-2 pt-2 border-t border-[#B89355]/20">
-          <button
-            type="button"
-            onClick={() => setShowAdminLink(!showAdminLink)}
-            className="w-full flex items-center justify-between text-xs text-[#855E1C] font-semibold hover:text-[#5B3E0C] cursor-pointer py-1"
-          >
-            <span className="flex items-center gap-1.5">
-              <Key className="w-3.5 h-3.5 text-[#B88728]" />
-              <span>لینک مدیریت کارت (جهت ویرایش‌های بعدی توسط شما)</span>
-            </span>
-            <span className="text-[10px] bg-[#B88728]/15 px-2 py-0.5 rounded-full">
-              {showAdminLink ? 'بستن' : 'نمایش'}
-            </span>
-          </button>
+        {/* Host/Admin Link Section (Collapsible Accordion - Hidden in Guest Mode) */}
+        {!isGuestMode && (
+          <div className="mt-2 pt-2 border-t border-[#B89355]/20">
+            <button
+              type="button"
+              onClick={() => setShowAdminLink(!showAdminLink)}
+              className="w-full flex items-center justify-between text-xs text-[#855E1C] font-semibold hover:text-[#5B3E0C] cursor-pointer py-1"
+            >
+              <span className="flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-[#B88728]" />
+                <span>لینک مدیریت کارت (جهت ویرایش‌های بعدی توسط شما)</span>
+              </span>
+              <span className="text-[10px] bg-[#B88728]/15 px-2 py-0.5 rounded-full">
+                {showAdminLink ? 'بستن' : 'نمایش'}
+              </span>
+            </button>
 
-          <AnimatePresence>
-            {showAdminLink && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-2 p-3 bg-white/70 border border-[#B89355]/25 rounded-2xl"
-              >
-                <p className="text-[11px] text-[#556251] mb-2 leading-relaxed">
-                  این لینک دارای دسترسی ویرایش است. آن را نزد خود ذخیره کنید تا هر زمان مایل بودید، ساعت یا تالار را تغییر دهید.
-                </p>
-                <div className="flex items-center gap-2">
-                  <input
-                    readOnly
-                    value={adminUrl}
-                    className="w-full bg-white border border-[#B89355]/30 rounded-xl px-2.5 py-1.5 text-xs text-[#1C221A] font-mono text-left focus:outline-none select-all"
-                  />
-                  <motion.button
-                    whileTap={{ scale: 0.92 }}
-                    onClick={handleCopyAdminLink}
-                    className="flex items-center gap-1 bg-[#F0E6D2] hover:bg-[#E8DCC2] text-[#855E1C] border border-[#B89355]/35 px-3 py-1.5 rounded-xl text-xs flex-shrink-0 transition-colors cursor-pointer font-medium"
-                  >
-                    {copiedAdminLink ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                    <span>{copiedAdminLink ? 'کپی شد' : 'کپی'}</span>
-                  </motion.button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+            <AnimatePresence>
+              {showAdminLink && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-2 p-3 bg-white/70 border border-[#B89355]/25 rounded-2xl"
+                >
+                  <p className="text-[11px] text-[#556251] mb-2 leading-relaxed">
+                    این لینک دارای دسترسی ویرایش است. آن را نزد خود ذخیره کنید تا هر زمان مایل بودید، ساعت یا تالار را تغییر دهید.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      readOnly
+                      value={adminUrl}
+                      className="w-full bg-white border border-[#B89355]/30 rounded-xl px-2.5 py-1.5 text-xs text-[#1C221A] font-mono text-left focus:outline-none select-all"
+                    />
+                    <motion.button
+                      whileTap={{ scale: 0.92 }}
+                      onClick={handleCopyAdminLink}
+                      className="flex items-center gap-1 bg-[#F0E6D2] hover:bg-[#E8DCC2] text-[#855E1C] border border-[#B89355]/35 px-3 py-1.5 rounded-xl text-xs flex-shrink-0 transition-colors cursor-pointer font-medium"
+                    >
+                      {copiedAdminLink ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                      <span>{copiedAdminLink ? 'کپی شد' : 'کپی'}</span>
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         {/* Full Text Copy Button */}
         <div className="mt-3 pt-3 border-t border-[#B89355]/20 flex items-center justify-between">

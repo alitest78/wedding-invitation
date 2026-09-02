@@ -1,6 +1,136 @@
 import { WeddingDetails } from '../types';
 
-// Convert English numbers to Persian numbers
+// Upload custom audio file permanently to server with persistent fallback
+export async function uploadAudioFile(file: File): Promise<{ success: boolean; url: string; title: string }> {
+  const cleanTitle = file.name.replace(/\.[^/.]+$/, '');
+  
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUri = reader.result as string;
+      try {
+        const res = await fetch('/api/upload-audio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            data: dataUri,
+            filename: file.name,
+          }),
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.url) {
+            resolve({
+              success: true,
+              url: json.url,
+              title: cleanTitle,
+            });
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Backend audio upload failed, falling back to permanent data URL', err);
+      }
+
+      // Fallback: Return permanent data URL (never expires, unlike blob URLs!)
+      resolve({
+        success: true,
+        url: dataUri,
+        title: cleanTitle,
+      });
+    };
+
+    reader.onerror = () => {
+      resolve({
+        success: false,
+        url: 'synth://shirazi',
+        title: cleanTitle || 'موسیقی سفارشی',
+      });
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+// Fetch all RSVPs / Wishes from server
+export async function fetchRSVPsFromServer(): Promise<any[]> {
+  try {
+    const res = await fetch('/api/rsvps');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.rsvps)) {
+        return data.rsvps;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to fetch RSVPs from server', err);
+  }
+  return [];
+}
+
+// Submit a new RSVP / Wish to server
+export async function saveRSVPToServer(rsvp: {
+  guestName: string;
+  attending: 'yes' | 'no';
+  guestCount: number;
+  congratulationMessage: string;
+}): Promise<any[] | null> {
+  try {
+    const res = await fetch('/api/rsvps', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rsvp),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.rsvps)) {
+        return data.rsvps;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to post RSVP to server', err);
+  }
+  return null;
+}
+
+// Like an RSVP item on server
+export async function likeRSVPOnServer(id: string): Promise<any[] | null> {
+  try {
+    const res = await fetch('/api/rsvps/like', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.rsvps)) {
+        return data.rsvps;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to like RSVP on server', err);
+  }
+  return null;
+}
+
+// Delete an RSVP item on server (used by host in settings)
+export async function deleteRSVPOnServer(id: string): Promise<any[] | null> {
+  try {
+    const res = await fetch(`/api/rsvps/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.rsvps)) {
+        return data.rsvps;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to delete RSVP on server', err);
+  }
+  return null;
+}
 export function toPersianDigits(num: number | string): string {
   const persianDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
   return String(num).replace(/[0-9]/g, (w) => persianDigits[+w]);
