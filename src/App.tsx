@@ -7,7 +7,7 @@ import { MusicPlayer } from './components/MusicPlayer';
 import { FloatingPetals } from './components/FloatingPetals';
 import { INITIAL_WEDDING, INITIAL_RSVPS } from './data/defaultWedding';
 import { WeddingDetails, RSVPResponse, MusicTrack, ThemeVariant } from './types';
-import { decodeWeddingFromURL, isGuestModeFromURL } from './utils/cardUtils';
+import { decodeWeddingFromURL, isGuestModeFromURL, getCardIdFromURL, fetchCardFromServer, saveCardToServer } from './utils/cardUtils';
 import { THEME_PRESETS } from './utils/themePresets';
 import { Lock, Unlock } from 'lucide-react';
 
@@ -35,8 +35,26 @@ export default function App() {
   });
 
   const [isGuestMode, setIsGuestMode] = useState<boolean>(() => isGuestModeFromURL());
+  const [activeShortId, setActiveShortId] = useState<string | undefined>(() => getCardIdFromURL() || undefined);
+  const [isLoadingCard, setIsLoadingCard] = useState<boolean>(false);
+
+  // Load from backend if short ID is present in URL
+  useEffect(() => {
+    const cardId = getCardIdFromURL();
+    if (cardId) {
+      setActiveShortId(cardId);
+      setIsLoadingCard(true);
+      fetchCardFromServer(cardId).then((fetched) => {
+        setIsLoadingCard(false);
+        if (fetched) {
+          setWedding(fetched);
+        }
+      });
+    }
+  }, []);
 
   const [rsvps, setRsvps] = useState<RSVPResponse[]>(() => {
+
     const local = localStorage.getItem('wedding_rsvps');
     if (local) {
       try {
@@ -58,12 +76,23 @@ export default function App() {
 
   const currentTheme = THEME_PRESETS[wedding.theme] || THEME_PRESETS['emerald-gold'];
 
-  // Save changes to localStorage and optionally open share modal
-  const handleSaveWedding = (updated: WeddingDetails) => {
+  // Save changes to localStorage and server, then open share modal
+  const handleSaveWedding = async (updated: WeddingDetails) => {
     setWedding(updated);
     localStorage.setItem('wedding_card_details', JSON.stringify(updated));
     setShowEditModal(false);
-    setShowShareModal(true); // Automatically open share modal so the host can copy the new guest link!
+    
+    // Save to server to obtain / update short ID
+    try {
+      const res = await saveCardToServer(updated, activeShortId);
+      if (res && res.id) {
+        setActiveShortId(res.id);
+      }
+    } catch (e) {
+      console.warn('Could not auto-save to server', e);
+    }
+    
+    setShowShareModal(true);
   };
 
   const handleThemeChange = (theme: ThemeVariant) => {
@@ -156,6 +185,9 @@ export default function App() {
         musicTitle={wedding.musicTitle}
         musicArtist={wedding.musicArtist}
         autoPlayTrigger={autoPlayMusic}
+        autoPlayOnEnter={wedding.autoPlayOnEnter ?? true}
+        musicVolume={wedding.musicVolume ?? 0.85}
+        musicLoop={wedding.musicLoop ?? true}
         onTrackChange={handleTrackChange}
       />
 
@@ -171,6 +203,8 @@ export default function App() {
       <ShareModal
         isOpen={showShareModal}
         wedding={wedding}
+        shortId={activeShortId}
+        onShortIdChange={(id) => setActiveShortId(id)}
         onClose={() => setShowShareModal(false)}
       />
     </div>

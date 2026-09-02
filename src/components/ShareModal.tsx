@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -10,32 +10,89 @@ import {
   MessageSquare,
   Smartphone,
   Key,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles,
+  Link2,
+  Edit2,
+  RefreshCw,
+  Globe
 } from 'lucide-react';
 import { WeddingDetails } from '../types';
 import { 
   getSocialShareLinks, 
   getGuestInvitationUrl, 
-  getAdminInvitationUrl 
+  getAdminInvitationUrl,
+  saveCardToServer 
 } from '../utils/cardUtils';
 
 interface ShareModalProps {
   wedding: WeddingDetails;
   isOpen: boolean;
+  shortId?: string;
+  onShortIdChange?: (id: string) => void;
   onClose: () => void;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ wedding, isOpen, onClose }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({ 
+  wedding, 
+  isOpen, 
+  shortId: initialShortId,
+  onShortIdChange,
+  onClose 
+}) => {
+  const [currentShortId, setCurrentShortId] = useState<string | undefined>(initialShortId);
+  const [customSlug, setCustomSlug] = useState<string>('');
+  const [isCustomizing, setIsCustomizing] = useState<boolean>(false);
+  const [isSavingShortLink, setIsSavingShortLink] = useState<boolean>(false);
   const [copiedGuestLink, setCopiedGuestLink] = useState(false);
   const [copiedAdminLink, setCopiedAdminLink] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [showAdminLink, setShowAdminLink] = useState(false);
 
+  // Auto-generate short ID if not exists when modal opens
+  useEffect(() => {
+    if (isOpen && !currentShortId) {
+      setIsSavingShortLink(true);
+      saveCardToServer(wedding).then((res) => {
+        setIsSavingShortLink(false);
+        if (res && res.id) {
+          setCurrentShortId(res.id);
+          if (onShortIdChange) onShortIdChange(res.id);
+        }
+      }).catch(() => {
+        setIsSavingShortLink(false);
+      });
+    }
+  }, [isOpen, wedding]);
+
+  // Handle custom slug save (e.g. "ali-zahra")
+  const handleSaveCustomSlug = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customSlug.trim()) return;
+    setIsSavingShortLink(true);
+    try {
+      const res = await saveCardToServer(wedding, customSlug.trim());
+      if (res && res.id) {
+        setCurrentShortId(res.id);
+        if (onShortIdChange) onShortIdChange(res.id);
+        setIsCustomizing(false);
+      }
+    } catch (e) {
+      console.warn('Failed to save custom slug', e);
+    } finally {
+      setIsSavingShortLink(false);
+    }
+  };
+
   if (!isOpen) return null;
 
-  const guestUrl = typeof window !== 'undefined' ? getGuestInvitationUrl(wedding) : '';
-  const adminUrl = typeof window !== 'undefined' ? getAdminInvitationUrl(wedding) : '';
+  const guestUrl = typeof window !== 'undefined' 
+    ? getGuestInvitationUrl(wedding, currentShortId) 
+    : '';
+  const adminUrl = typeof window !== 'undefined' 
+    ? getAdminInvitationUrl(wedding, currentShortId) 
+    : '';
   const socialLinks = getSocialShareLinks(wedding, guestUrl);
 
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(guestUrl)}&color=184-135-40&bgcolor=250-246-238`;
@@ -97,41 +154,55 @@ export const ShareModal: React.FC<ShareModalProps> = ({ wedding, isOpen, onClose
         {/* Modal Header */}
         <div className="text-center mb-5">
           <div className="font-cinzel text-[10px] text-[#946F29] tracking-[0.28em] uppercase mb-1 font-bold">
-            SHARE & GUEST LINK
+            SHORT LINK & GUEST INVITATION
           </div>
           <div className="w-12 h-12 rounded-2xl bg-[#F0E6D2] mx-auto flex items-center justify-center text-[#B88728] mb-2.5 shadow-inner border border-[#B89355]/30">
-            <Share2 className="w-6 h-6" />
+            <Link2 className="w-6 h-6" />
           </div>
           <h3 className="font-amiri text-2xl sm:text-3xl font-bold text-[#1C221A]">
-            دریافت لینک کارت دعوت عروسی
+            لینک کوتاه کارت دعوت عروسی
           </h3>
           <p className="text-xs text-[#556251] mt-1">
-            لینک نهایی را برای مهمانان ارسال کنید یا در شبکه‌های اجتماعی به اشتراک بگذارید
+            لینک کوتاه، تمیز و قفل‌شده مخصوص ارسال به مهمانان و بستگان
           </p>
         </div>
 
-        {/* Highlighted Guest Locked Link (Main Primary Container) */}
+        {/* Main Short Guest Link Box */}
         <div className="bg-gradient-to-br from-[#FFF9EE] to-[#F5EBD7] border-2 border-[#B88728]/50 rounded-2xl p-4 mb-4 shadow-md relative overflow-hidden">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-1.5 text-xs font-bold text-[#855E1C]">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>لینک اختصاصی مهمانان (قفل‌شده و نهایی):</span>
+              <span>لینک کوتاه اختصاصی مهمانان (قفل‌شده):</span>
             </div>
-            <span className="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full border border-emerald-300">
-              بدون دکمه ویرایش
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] bg-amber-100 text-amber-900 font-semibold px-2 py-0.5 rounded-full border border-amber-300">
+                لینک کوتاه
+              </span>
+              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full border border-emerald-300">
+                بدون ویرایش
+              </span>
+            </div>
           </div>
 
-          <p className="text-[11px] text-[#556251] mb-2 leading-relaxed">
-            مهمانان با باز کردن این لینک، کارت را با اطلاعات شما مشاهده و ثبت حضور می‌کنند و دکمه‌های ویرایش برایشان مخفی است.
+          <p className="text-[11px] text-[#556251] mb-2.5 leading-relaxed">
+            مهمانان با این لینک کوتاه فقط کارت کامل شما را مشاهده می‌کنند و دکمه‌های ویرایش برایشان مخفی است.
           </p>
 
-          <div className="flex items-center gap-2">
-            <input
-              readOnly
-              value={guestUrl}
-              className="w-full bg-white border border-[#B89355]/35 rounded-xl px-3 py-2 text-xs text-[#1C221A] font-mono text-left focus:outline-none select-all shadow-inner"
-            />
+          <div className="flex items-center gap-2 mb-2">
+            <div className="relative w-full">
+              <input
+                readOnly
+                value={guestUrl}
+                className="w-full bg-white border border-[#B89355]/35 rounded-xl px-3 py-2 text-xs text-[#1C221A] font-mono text-left focus:outline-none select-all shadow-inner tracking-tight"
+              />
+              {isSavingShortLink && (
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-[#B88728] bg-white/90 px-2 py-0.5 rounded-md shadow-sm">
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                  <span>تولید لینک...</span>
+                </div>
+              )}
+            </div>
+
             <motion.button
               whileTap={{ scale: 0.92 }}
               id="copy-guest-url-btn"
@@ -146,11 +217,61 @@ export const ShareModal: React.FC<ShareModalProps> = ({ wedding, isOpen, onClose
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
-                  <span>کپی لینک مهمان</span>
+                  <span>کپی لینک</span>
                 </>
               )}
             </motion.button>
           </div>
+
+          {/* Custom Slug Name Option */}
+          <div className="pt-2 border-t border-[#B89355]/20 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setIsCustomizing(!isCustomizing)}
+              className="text-[11px] text-[#855E1C] hover:text-[#5B3E0C] font-semibold flex items-center gap-1 cursor-pointer"
+            >
+              <Edit2 className="w-3 h-3" />
+              <span>{isCustomizing ? 'بستن تنظیم نام دلخواه' : 'شخصی‌سازی نام لینک (مثلاً نام عروس و داماد)'}</span>
+            </button>
+            {currentShortId && (
+              <span className="text-[10px] font-mono text-[#556251] bg-white/60 px-2 py-0.5 rounded-md border border-[#B89355]/20">
+                کد: {currentShortId}
+              </span>
+            )}
+          </div>
+
+          <AnimatePresence>
+            {isCustomizing && (
+              <motion.form
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                onSubmit={handleSaveCustomSlug}
+                className="mt-2.5 pt-2.5 border-t border-[#B89355]/20"
+              >
+                <label className="block text-[11px] text-[#855E1C] font-medium mb-1">
+                  نام انگلیسی دلخواه برای لینک (مثلاً: ali-zahra یا wedding-2026):
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={customSlug}
+                    onChange={(e) => setCustomSlug(e.target.value)}
+                    placeholder="ali-maryam"
+                    dir="ltr"
+                    className="w-full bg-white border border-[#B89355]/35 rounded-xl px-3 py-1.5 text-xs text-[#1C221A] font-mono focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSavingShortLink || !customSlug.trim()}
+                    className="bg-[#B88728] hover:bg-[#946F29] text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer flex-shrink-0 disabled:opacity-50"
+                  >
+                    {isSavingShortLink ? 'در حال ثبت...' : 'ثبت لینک'}
+                  </button>
+                </div>
+              </motion.form>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Smart Mobile Share Button */}
@@ -343,7 +464,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ wedding, isOpen, onClose
         {/* Full Text Copy Button */}
         <div className="mt-3 pt-3 border-t border-[#B89355]/20 flex items-center justify-between">
           <span className="text-[11px] text-[#556251]">
-            متن دعوت پیامکی همراه با لینک کارت
+            متن دعوت پیامکی همراه با لینک کوتاه کارت
           </span>
 
           <motion.button

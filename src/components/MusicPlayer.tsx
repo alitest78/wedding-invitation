@@ -10,6 +10,9 @@ interface MusicPlayerProps {
   musicTitle: string;
   musicArtist: string;
   autoPlayTrigger?: boolean;
+  autoPlayOnEnter?: boolean;
+  musicVolume?: number;
+  musicLoop?: boolean;
   onTrackChange?: (track: MusicTrack) => void;
 }
 
@@ -18,18 +21,29 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   musicTitle,
   musicArtist,
   autoPlayTrigger,
+  autoPlayOnEnter = true,
+  musicVolume = 0.85,
+  musicLoop = true,
   onTrackChange,
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [volume, setVolume] = useState(0.85);
+  const [volume, setVolume] = useState(musicVolume);
   const [showTrackList, setShowTrackList] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [isUsingSynth, setIsUsingSynth] = useState(false);
   const [hasAutoTriggered, setHasAutoTriggered] = useState(false);
+  const [hasAttemptedEnterPlay, setHasAttemptedEnterPlay] = useState(false);
 
   const isSynthUrl = (url: string) => !url || url.startsWith('synth://') || url.includes('musicdel.ir');
+
+  // Update internal volume when prop changes
+  useEffect(() => {
+    if (musicVolume !== undefined) {
+      setVolume(musicVolume);
+    }
+  }, [musicVolume]);
 
   // Sync volume with both HTML5 audio & Persian synth engine
   useEffect(() => {
@@ -46,6 +60,41 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
     }
     persianAudioEngine.setMute(isMuted);
   }, [isMuted]);
+
+  // Auto-play on enter / first touch anywhere on the site
+  useEffect(() => {
+    if (!autoPlayOnEnter || hasAttemptedEnterPlay || isPlaying) return;
+
+    const tryInstantPlay = () => {
+      startPlayback();
+      setHasAttemptedEnterPlay(true);
+    };
+
+    // 1. Try immediate playback
+    tryInstantPlay();
+
+    // 2. Add one-time user interaction listener if browser policy pauses initial unmuted audio
+    const handleFirstUserGesture = () => {
+      if (!isPlaying) {
+        startPlayback();
+      }
+      cleanupGestureListeners();
+    };
+
+    const cleanupGestureListeners = () => {
+      window.removeEventListener('click', handleFirstUserGesture);
+      window.removeEventListener('touchstart', handleFirstUserGesture);
+      window.removeEventListener('keydown', handleFirstUserGesture);
+    };
+
+    window.addEventListener('click', handleFirstUserGesture, { once: true, passive: true });
+    window.addEventListener('touchstart', handleFirstUserGesture, { once: true, passive: true });
+    window.addEventListener('keydown', handleFirstUserGesture, { once: true, passive: true });
+
+    return () => {
+      cleanupGestureListeners();
+    };
+  }, [autoPlayOnEnter, hasAttemptedEnterPlay, isPlaying, currentUrl]);
 
   // Handle autoPlayTrigger when envelope opens
   useEffect(() => {
@@ -149,7 +198,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
     <>
       <audio
         ref={audioRef}
-        loop
+        loop={musicLoop}
         preload="auto"
         onPlay={() => setIsPlaying(true)}
         onPause={() => {

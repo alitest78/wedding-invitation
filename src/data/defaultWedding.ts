@@ -3,28 +3,42 @@ import { WeddingDetails, MusicTrack, RSVPResponse } from '../types';
 export const MUSIC_TRACKS: MusicTrack[] = [
   {
     id: 'shirazi-jingo-jing',
-    title: 'جینگو جینگ ساز میاد از بالای شیراز میاد',
-    artist: 'موسیقی شاد شیرازی (سنتور، تار و تمبک ۶/۸)',
+    title: 'جینگو جینگ ساز میاد (شادباش شیرازی)',
+    artist: 'موسیقی سنتی شاد پیوند (سنتور و تمبک ۶/۸)',
     src: 'synth://shirazi',
     isPopular: true,
   },
   {
     id: 'classic-persian-wedding',
     title: 'کوچه تنگی و مبارک‌باد عروسی',
-    artist: 'شادباش اصیل پیوند و وصال',
+    artist: 'شادباش اصیل پیوند و وصال ایرانی',
     src: 'synth://mobarakbad',
     isPopular: true,
   },
   {
+    id: 'romantic-piano-waltz',
+    title: 'والس رویایی و کلاسیک وصال',
+    artist: 'پیانو و ارکسترال رمانتیک عروسی',
+    src: 'synth://waltz',
+    isPopular: true,
+  },
+  {
     id: 'romantic-piano-tar',
-    title: 'نغمه‌های دل‌انگیز تار و سنتور عاشقانه',
-    artist: 'همنوازی زنده دستگاه ماهور',
+    title: 'نغمه‌های دل‌انگیز تار و سنتور ماهور',
+    artist: 'همنوازی زنده دستگاه ماهور و اصفهان',
     src: 'synth://santur',
+    isPopular: true,
+  },
+  {
+    id: 'gole-sangam-soft',
+    title: 'نغمه بی‌کلام گل سنگم (عاشقانه و آرامش‌بخش)',
+    artist: 'سنتور و پیانو احساسی',
+    src: 'synth://golesangam',
   },
   {
     id: 'persian-setar-live',
-    title: 'تکنوازی سه‌تار و ماهور (موسیقی اصیل)',
-    artist: 'نوای سنتی ایرانی',
+    title: 'تکنوازی سه‌تار و نوای اصیل ایرانی',
+    artist: 'موسیقی فاخر و سنتی',
     src: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Persian_Classical_Music_Setar.ogg',
   }
 ];
@@ -84,9 +98,12 @@ export const INITIAL_WEDDING: WeddingDetails = {
   theme: 'sage-gold',
   envelopeColor: '#3F473D',
   musicUrl: 'synth://shirazi',
-  musicTitle: 'جینگو جینگ ساز میاد از بالای شیراز میاد',
-  musicArtist: 'موسیقی شاد شیرازی (سنتور، تار و تمبک ۶/۸)',
+  musicTitle: 'جینگو جینگ ساز میاد (شادباش شیرازی)',
+  musicArtist: 'موسیقی سنتی شاد پیوند (سنتور و تمبک ۶/۸)',
   autoPlayOnOpen: true,
+  autoPlayOnEnter: true,
+  musicVolume: 0.85,
+  musicLoop: true,
   contactPhone: '09120000000'
 };
 

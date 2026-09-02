@@ -109,6 +109,61 @@ export function calculateTimeLeft(targetDateStr: string): TimeLeft {
   return { days, hours, minutes, seconds, isPast: false };
 }
 
+// Save wedding to backend server with short ID
+export async function saveCardToServer(
+  wedding: WeddingDetails,
+  customSlug?: string
+): Promise<{ success: boolean; id: string; guestUrl: string; adminUrl: string } | null> {
+  try {
+    const res = await fetch('/api/cards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wedding, customSlug }),
+    });
+    if (!res.ok) throw new Error('API request failed');
+    const data = await res.json();
+    return data;
+  } catch (e) {
+    console.warn('Could not save card to server, fallback to client URL', e);
+    return null;
+  }
+}
+
+// Fetch wedding card from backend server by short ID
+export async function fetchCardFromServer(id: string): Promise<WeddingDetails | null> {
+  try {
+    const res = await fetch(`/api/cards/${encodeURIComponent(id)}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && data.success && data.wedding) {
+      return data.wedding;
+    }
+    return null;
+  } catch (e) {
+    console.warn('Failed to fetch card from server', e);
+    return null;
+  }
+}
+
+// Get Short Card ID from URL (?c=xyz or /c/xyz)
+export function getCardIdFromURL(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const c = params.get('c') || params.get('id');
+    if (c) return c;
+
+    const pathname = window.location.pathname;
+    if (pathname.startsWith('/c/')) {
+      const parts = pathname.split('/');
+      if (parts[2]) return parts[2];
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Encode state into URL query parameter safely for full sharability
 export function encodeWeddingToURL(wedding: WeddingDetails, isGuest: boolean = true): string {
   try {
@@ -130,12 +185,24 @@ export function encodeWeddingToURL(wedding: WeddingDetails, isGuest: boolean = t
 }
 
 // Generate a locked Guest Link (no edit or theme switcher buttons)
-export function getGuestInvitationUrl(wedding: WeddingDetails): string {
+export function getGuestInvitationUrl(wedding: WeddingDetails, shortId?: string): string {
+  if (shortId && typeof window !== 'undefined') {
+    const url = new URL(window.location.origin);
+    url.searchParams.set('c', shortId);
+    url.searchParams.set('mode', 'guest');
+    return url.toString();
+  }
   return encodeWeddingToURL(wedding, true);
 }
 
 // Generate an Admin / Host Link (with full edit capabilities)
-export function getAdminInvitationUrl(wedding: WeddingDetails): string {
+export function getAdminInvitationUrl(wedding: WeddingDetails, shortId?: string): string {
+  if (shortId && typeof window !== 'undefined') {
+    const url = new URL(window.location.origin);
+    url.searchParams.set('c', shortId);
+    url.searchParams.set('mode', 'admin');
+    return url.toString();
+  }
   return encodeWeddingToURL(wedding, false);
 }
 
@@ -153,8 +220,8 @@ export function isGuestModeFromURL(): boolean {
     if (mode === 'guest' || guest === '1' || guest === 'true') {
       return true;
     }
-    // If 'w' is present without explicit admin flag, default to locked guest view for security
-    if (params.get('w')) {
+    // If 'w' or 'c' is present without explicit admin flag, default to locked guest view for guests
+    if (params.get('w') || params.get('c') || window.location.pathname.startsWith('/c/')) {
       return true;
     }
     return false;
@@ -176,4 +243,5 @@ export function decodeWeddingFromURL(): WeddingDetails | null {
     return null;
   }
 }
+
 

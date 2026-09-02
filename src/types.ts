@@ -28,6 +28,9 @@ export interface WeddingDetails {
   musicTitle: string;
   musicArtist: string;
   autoPlayOnOpen: boolean;
+  autoPlayOnEnter?: boolean;
+  musicVolume?: number;
+  musicLoop?: boolean;
   contactPhone?: string;
 }
 

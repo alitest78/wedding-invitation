@@ -11,7 +11,7 @@ class PersianAudioEngine {
   private currentStep: number = 0;
   private masterGain: GainNode | null = null;
   private isMuted: boolean = false;
-  private trackType: 'shirazi' | 'mobarakbad' | 'santur' = 'shirazi';
+  private trackType: 'shirazi' | 'mobarakbad' | 'santur' | 'golesangam' | 'waltz' = 'shirazi';
 
   private initContext() {
     if (!this.ctx) {
@@ -40,7 +40,7 @@ class PersianAudioEngine {
     this.setVolume(muted ? 0 : 0.85);
   }
 
-  public setTrackType(type: 'shirazi' | 'mobarakbad' | 'santur') {
+  public setTrackType(type: 'shirazi' | 'mobarakbad' | 'santur' | 'golesangam' | 'waltz') {
     this.trackType = type;
   }
 
@@ -124,9 +124,14 @@ class PersianAudioEngine {
     this.isPlaying = true;
     this.currentStep = 0;
 
-    if (trackName?.includes('مبارک')) {
+    const lower = (trackName || '').toLowerCase();
+    if (lower.includes('mobarak') || lower.includes('مبارک')) {
       this.trackType = 'mobarakbad';
-    } else if (trackName?.includes('سه‌تار') || trackName?.includes('تار') || trackName?.includes('پیانو')) {
+    } else if (lower.includes('golesangam') || lower.includes('گل سنگم') || lower.includes('سنگم')) {
+      this.trackType = 'golesangam';
+    } else if (lower.includes('waltz') || lower.includes('والس') || lower.includes('پیانو') || lower.includes('کلاسیک')) {
+      this.trackType = 'waltz';
+    } else if (lower.includes('سه‌تار') || lower.includes('تار') || lower.includes('santur') || lower.includes('سنتور')) {
       this.trackType = 'santur';
     } else {
       this.trackType = 'shirazi';
@@ -137,28 +142,32 @@ class PersianAudioEngine {
     const NOTES: Record<string, number> = {
       C4: 261.63,
       D4: 293.66,
+      Ds4: 311.13,
       E4: 329.63,
       F4: 349.23,
       Fs4: 370.0,
       G4: 392.00,
+      Gs4: 415.30,
       A4: 440.00,
+      As4: 466.16,
       B4: 493.88,
       C5: 523.25,
       D5: 587.33,
+      Ds5: 622.25,
       E5: 659.25,
+      F5: 698.46,
+      G5: 783.99,
       REST: 0,
     };
 
     // Melody 1: Jingo Jing Shirazi festive 6/8 rhythm pattern
     const shiraziMelody: Array<{ note: string; dur: number; bass?: boolean; slap?: boolean }> = [
-      // "جینگو جینگ ساز میاد"
       { note: 'D5', dur: 0.22, bass: true },
       { note: 'D5', dur: 0.18 },
       { note: 'B4', dur: 0.18, slap: true },
       { note: 'C5', dur: 0.22 },
       { note: 'D5', dur: 0.35, bass: true },
       { note: 'REST', dur: 0.15 },
-      // "از بالای شیراز میاد"
       { note: 'D5', dur: 0.2, bass: true },
       { note: 'E5', dur: 0.2, slap: true },
       { note: 'D5', dur: 0.2 },
@@ -166,7 +175,6 @@ class PersianAudioEngine {
       { note: 'B4', dur: 0.2 },
       { note: 'A4', dur: 0.35, slap: true },
       { note: 'G4', dur: 0.45, bass: true },
-      // Joyful motif
       { note: 'G4', dur: 0.2, bass: true },
       { note: 'B4', dur: 0.2, slap: true },
       { note: 'D5', dur: 0.25 },
@@ -209,7 +217,38 @@ class PersianAudioEngine {
       { note: 'G4', dur: 0.5 },
     ];
 
-    const stepInterval = 210; // ms per step for upbeat Persian 6/8 groove
+    // Melody 4: Gole Sangam (گل سنگم عاشقانه و آرامش‌بخش)
+    const golesangamMelody: Array<{ note: string; dur: number; bass?: boolean; slap?: boolean }> = [
+      { note: 'C5', dur: 0.4, bass: true },
+      { note: 'D5', dur: 0.3 },
+      { note: 'Ds5', dur: 0.5, slap: true },
+      { note: 'D5', dur: 0.3 },
+      { note: 'C5', dur: 0.3, bass: true },
+      { note: 'As4', dur: 0.4 },
+      { note: 'Gs4', dur: 0.4, slap: true },
+      { note: 'G4', dur: 0.6, bass: true },
+      { note: 'G4', dur: 0.3 },
+      { note: 'Gs4', dur: 0.3, slap: true },
+      { note: 'As4', dur: 0.4 },
+      { note: 'C5', dur: 0.5, bass: true },
+    ];
+
+    // Melody 5: Romantic Wedding Waltz (والس عاشقانه پیانو و ارکستر)
+    const waltzMelody: Array<{ note: string; dur: number; bass?: boolean; slap?: boolean }> = [
+      { note: 'E4', dur: 0.3, bass: true },
+      { note: 'G4', dur: 0.25 },
+      { note: 'C5', dur: 0.3, slap: true },
+      { note: 'B4', dur: 0.25 },
+      { note: 'A4', dur: 0.3, bass: true },
+      { note: 'G4', dur: 0.25 },
+      { note: 'E5', dur: 0.45, slap: true },
+      { note: 'D5', dur: 0.3, bass: true },
+      { note: 'C5', dur: 0.3 },
+      { note: 'B4', dur: 0.3, slap: true },
+      { note: 'C5', dur: 0.5, bass: true },
+    ];
+
+    const stepInterval = this.trackType === 'golesangam' ? 260 : this.trackType === 'waltz' ? 240 : 210;
 
     const runLoop = () => {
       if (!this.isPlaying || !this.ctx) return;
@@ -217,6 +256,10 @@ class PersianAudioEngine {
       const melody =
         this.trackType === 'mobarakbad'
           ? mobarakMelody
+          : this.trackType === 'golesangam'
+          ? golesangamMelody
+          : this.trackType === 'waltz'
+          ? waltzMelody
           : this.trackType === 'santur'
           ? santurMelody
           : shiraziMelody;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -13,11 +13,21 @@ import {
   Calendar,
   Clock,
   Palette,
-  Info
+  Info,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  SlidersHorizontal,
+  Repeat,
+  Zap,
+  Check,
+  Link as LinkIcon
 } from 'lucide-react';
-import { WeddingDetails, ThemeVariant } from '../types';
+import { WeddingDetails, ThemeVariant, MusicTrack } from '../types';
 import { MUSIC_TRACKS, POEM_PRESETS, CITY_COORDINATES, INITIAL_WEDDING } from '../data/defaultWedding';
 import { THEME_PRESETS } from '../utils/themePresets';
+import { persianAudioEngine } from '../utils/persianAudioEngine';
 
 interface EditCardModalProps {
   isOpen: boolean;
@@ -34,6 +44,51 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<WeddingDetails>({ ...wedding });
   const [activeTab, setActiveTab] = useState<'couple' | 'event' | 'venue' | 'poem' | 'music' | 'theme'>('couple');
+  const [previewTrackId, setPreviewTrackId] = useState<string | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Sync formData when wedding prop updates
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({ ...wedding });
+    }
+  }, [isOpen, wedding]);
+
+  // Stop preview playback when closing modal or switching away
+  useEffect(() => {
+    return () => {
+      stopPreview();
+    };
+  }, []);
+
+  const stopPreview = () => {
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+    }
+    persianAudioEngine.stop();
+    setPreviewTrackId(null);
+  };
+
+  const handleTogglePreview = (e: React.MouseEvent, track: MusicTrack) => {
+    e.stopPropagation();
+    if (previewTrackId === track.id) {
+      stopPreview();
+      return;
+    }
+
+    stopPreview();
+    setPreviewTrackId(track.id);
+
+    if (track.src.startsWith('synth://')) {
+      persianAudioEngine.start(track.title);
+    } else if (previewAudioRef.current) {
+      previewAudioRef.current.src = track.src;
+      previewAudioRef.current.volume = formData.musicVolume ?? 0.85;
+      previewAudioRef.current.play().catch(() => {
+        persianAudioEngine.start(track.title);
+      });
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -427,55 +482,247 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
             </div>
           )}
 
-          {/* Tab 5: Music Selection */}
+          {/* Tab 5: Music Selection & Auto-Play Settings */}
           {activeTab === 'music' && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <label className="block text-xs font-semibold text-[#1C221A] mb-1">
-                انتخاب از لیست آهنگ‌های بی‌کلام و رویایی:
-              </label>
-              <div className="space-y-2">
-                {MUSIC_TRACKS.map((track) => (
-                  <div
-                    key={track.id}
-                    onClick={() => {
+            <div className="space-y-5 animate-in fade-in duration-150">
+              <audio ref={previewAudioRef} onEnded={() => setPreviewTrackId(null)} />
+
+              {/* Autoplay & Playback Behavior Settings Section */}
+              <div className="bg-white/80 rounded-2xl p-4 border border-[#B89355]/30 space-y-3.5 shadow-sm">
+                <div className="flex items-center gap-2 text-xs font-bold text-[#946F29] border-b border-[#B89355]/20 pb-2">
+                  <Zap className="w-4 h-4 text-[#B88728]" />
+                  <span>تنظیمات هوشمند پخش خودکار نوای جشن:</span>
+                </div>
+
+                {/* Switch 1: Auto-play on Site Entry */}
+                <div className="flex items-start justify-between gap-3 pt-1">
+                  <div className="space-y-0.5">
+                    <label className="text-xs font-bold text-[#1C221A] flex items-center gap-1.5 cursor-pointer">
+                      <span>پخش خودکار با ورود به سایت (اولین لمس)</span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">
+                        پیشنهادی
+                      </span>
+                    </label>
+                    <p className="text-[11px] text-[#556251] leading-relaxed">
+                      به محض ورود مهمان به صفحه دعوت یا با اولین لمس صفحه، نوای جشن به آرامی پخش شود.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
                       setFormData((prev) => ({
                         ...prev,
-                        musicUrl: track.src,
-                        musicTitle: track.title,
-                        musicArtist: track.artist
-                      }));
-                    }}
-                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                      formData.musicUrl === track.src
-                        ? 'bg-[#B88728]/15 border-[#B88728] text-[#855E1C] shadow-sm'
-                        : 'bg-white border-[#B89355]/20 text-[#1C221A] hover:bg-amber-50'
+                        autoPlayOnEnter: !(prev.autoPlayOnEnter ?? true)
+                      }))
+                    }
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      (formData.autoPlayOnEnter ?? true) ? 'bg-[#B88728]' : 'bg-gray-300'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <Music className="w-4 h-4 text-[#B88728]" />
-                      <div>
-                        <div className="text-xs font-bold">{track.title}</div>
-                        <div className="text-[10px] text-[#556251]">{track.artist}</div>
-                      </div>
-                    </div>
-                    {formData.musicUrl === track.src && (
-                      <span className="text-[10px] bg-[#B88728] text-white font-bold px-2 py-0.5 rounded-full">
-                        انتخاب شده
-                      </span>
-                    )}
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        (formData.autoPlayOnEnter ?? true) ? 'translate-x-0' : '-translate-x-5'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Switch 2: Auto-play on Envelope Open */}
+                <div className="flex items-start justify-between gap-3 pt-2 border-t border-[#B89355]/15">
+                  <div className="space-y-0.5">
+                    <label className="text-xs font-bold text-[#1C221A] cursor-pointer">
+                      پخش خودکار هنگام گشودن پاکت
+                    </label>
+                    <p className="text-[11px] text-[#556251] leading-relaxed">
+                      با لمس مهر و موم موم و باز شدن انیمیشن پاکت، موسیقی شروع شود.
+                    </p>
                   </div>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        autoPlayOnOpen: !prev.autoPlayOnOpen
+                      }))
+                    }
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      formData.autoPlayOnOpen ? 'bg-[#B88728]' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        formData.autoPlayOnOpen ? 'translate-x-0' : '-translate-x-5'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Switch 3: Continuous Loop */}
+                <div className="flex items-start justify-between gap-3 pt-2 border-t border-[#B89355]/15">
+                  <div className="space-y-0.5">
+                    <label className="text-xs font-bold text-[#1C221A] cursor-pointer">
+                      تکرار مداوم موسیقی (پخش پیوسته)
+                    </label>
+                    <p className="text-[11px] text-[#556251] leading-relaxed">
+                      پس از پایان قطعه موسیقی، مجدداً از ابتدا تکرار شود.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        musicLoop: !(prev.musicLoop ?? true)
+                      }))
+                    }
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      (formData.musicLoop ?? true) ? 'bg-[#B88728]' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        (formData.musicLoop ?? true) ? 'translate-x-0' : '-translate-x-5'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Volume Level Control */}
+                <div className="pt-2 border-t border-[#B89355]/15">
+                  <div className="flex items-center justify-between text-xs mb-2">
+                    <span className="font-bold text-[#1C221A] flex items-center gap-1.5">
+                      <Volume2 className="w-3.5 h-3.5 text-[#B88728]" />
+                      <span>میزان بلندی صدای پیش‌فرض:</span>
+                    </span>
+                    <span className="font-mono text-[11px] text-[#946F29] font-bold">
+                      {Math.round((formData.musicVolume ?? 0.85) * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="1"
+                      step="0.05"
+                      value={formData.musicVolume ?? 0.85}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setFormData((prev) => ({ ...prev, musicVolume: val }));
+                        if (previewAudioRef.current) previewAudioRef.current.volume = val;
+                        persianAudioEngine.setVolume(val);
+                      }}
+                      className="w-full h-1.5 bg-black/10 rounded-lg appearance-none cursor-pointer accent-[#B88728]"
+                    />
+                    <div className="flex gap-1">
+                      {[
+                        { label: 'ملایم', val: 0.5 },
+                        { label: 'استاندارد', val: 0.85 },
+                        { label: 'کامل', val: 1.0 },
+                      ].map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev) => ({ ...prev, musicVolume: preset.val }));
+                            if (previewAudioRef.current) previewAudioRef.current.volume = preset.val;
+                            persianAudioEngine.setVolume(preset.val);
+                          }}
+                          className={`text-[10px] px-2 py-1 rounded-lg border transition-all cursor-pointer ${
+                            Math.abs((formData.musicVolume ?? 0.85) - preset.val) < 0.05
+                              ? 'bg-[#B88728] text-white border-[#B88728] font-bold'
+                              : 'bg-white text-[#556251] border-[#B89355]/30 hover:bg-amber-50'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Custom Audio Upload */}
-              <div className="pt-3 border-t border-[#B89355]/20">
-                <label className="block text-xs font-semibold text-[#1C221A] mb-1.5">
-                  یا آپلود آهنگ دلخواه (mp3 / m4a):
+              {/* Track Selection List with Live Preview */}
+              <div>
+                <label className="block text-xs font-bold text-[#1C221A] mb-2">
+                  انتخاب قطعه موسیقی (برای شنیدن روی دکمه پخش لمس کنید):
                 </label>
-                <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl text-xs text-[#1C221A] font-medium cursor-pointer hover:bg-amber-50 transition-colors border border-[#B89355]/30 shadow-sm">
+                <div className="space-y-2">
+                  {MUSIC_TRACKS.map((track) => {
+                    const isSelected = formData.musicUrl === track.src;
+                    const isCurrentlyPreviewing = previewTrackId === track.id;
+
+                    return (
+                      <div
+                        key={track.id}
+                        onClick={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            musicUrl: track.src,
+                            musicTitle: track.title,
+                            musicArtist: track.artist
+                          }));
+                        }}
+                        className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
+                          isSelected
+                            ? 'bg-[#B88728]/15 border-[#B88728] text-[#855E1C] shadow-sm'
+                            : 'bg-white border-[#B89355]/20 text-[#1C221A] hover:bg-amber-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Live Preview Play/Pause button */}
+                          <button
+                            type="button"
+                            title={isCurrentlyPreviewing ? 'توقف پیش‌شنوایی' : 'پیش‌شنوایی این آهنگ'}
+                            onClick={(e) => handleTogglePreview(e, track)}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-transform ${
+                              isCurrentlyPreviewing
+                                ? 'bg-[#946F29] text-white shadow-md scale-105'
+                                : 'bg-black/5 hover:bg-[#B88728]/20 text-[#B88728]'
+                            }`}
+                          >
+                            {isCurrentlyPreviewing ? (
+                              <Pause className="w-3.5 h-3.5 fill-current" />
+                            ) : (
+                              <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                            )}
+                          </button>
+
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold truncate">{track.title}</div>
+                            <div className="text-[10px] text-[#556251] truncate">{track.artist}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {isCurrentlyPreviewing && (
+                            <span className="text-[9px] bg-[#B88728] text-white font-bold px-2 py-0.5 rounded-full animate-pulse">
+                              در حال پخش...
+                            </span>
+                          )}
+                          {isSelected && (
+                            <span className="text-[10px] bg-[#1C221A] text-white font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                              <Check className="w-3 h-3 text-emerald-400" />
+                              <span>انتخاب کارت</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Audio Upload & Direct URL */}
+              <div className="pt-3 border-t border-[#B89355]/20 space-y-3">
+                <label className="block text-xs font-bold text-[#1C221A]">
+                  یا قرار دادن فایل صوتی دلخواه (آپلود یا لینک مستقیم):
+                </label>
+                
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                  {/* File Upload Button */}
+                  <label className="flex items-center justify-center gap-2 bg-white px-4 py-2.5 rounded-xl text-xs text-[#1C221A] font-medium cursor-pointer hover:bg-amber-50 transition-colors border border-[#B89355]/30 shadow-sm flex-shrink-0">
                     <Upload className="w-4 h-4 text-[#B88728]" />
-                    <span>انتخاب فایل موسیقی از دستگاه</span>
+                    <span>آپلود فایل صوتی (MP3/M4A)</span>
                     <input
                       type="file"
                       accept="audio/*"
@@ -483,9 +730,34 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                       className="hidden"
                     />
                   </label>
-                  <span className="text-[11px] text-[#556251] truncate max-w-xs">
-                    {formData.musicTitle}
+
+                  {/* Direct MP3 URL Input */}
+                  <div className="relative flex-1">
+                    <LinkIcon className="w-3.5 h-3.5 text-[#B88728] absolute right-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="url"
+                      value={formData.musicUrl.startsWith('synth://') || formData.musicUrl.startsWith('blob:') ? '' : formData.musicUrl}
+                      onChange={(e) => {
+                        const url = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          musicUrl: url || 'synth://shirazi',
+                          musicTitle: url ? 'آهنگ اختصاصی اینترنتی' : 'جینگو جینگ ساز میاد',
+                          musicArtist: 'موزیک انتخابی شما'
+                        }));
+                      }}
+                      placeholder="یا آدرس مستقیم اینترنتی موزیک (https://...mp3)"
+                      className="w-full bg-white border border-[#B89355]/30 rounded-xl pr-9 pl-3 py-2 text-xs text-[#1C221A] focus:outline-none focus:border-[#B88728]"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-[#556251] bg-white/60 p-2.5 rounded-xl border border-[#B89355]/20 flex items-center justify-between">
+                  <span className="font-medium truncate">
+                    قطعه انتخابی فعال: <strong className="text-[#1C221A]">{formData.musicTitle}</strong>
                   </span>
+                  <span className="text-[10px] text-[#946F29]">{formData.musicArtist}</span>
                 </div>
               </div>
             </div>
