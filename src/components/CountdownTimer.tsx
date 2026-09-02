@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 import { calculateTimeLeft, TimeLeft, toPersianDigits } from '../utils/cardUtils';
-import { Clock, CalendarHeart } from 'lucide-react';
+import { Clock, CalendarHeart, Sparkles } from 'lucide-react';
 
 interface CountdownTimerProps {
   targetDate: string; // e.g. "2026-10-15"
@@ -25,10 +26,10 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, sham
   }, [targetDate]);
 
   return (
-    <div className="w-full my-6 bg-[#20231F]/60 border border-[#C5A46D]/30 rounded-2xl p-4 sm:p-6 text-center shadow-lg relative overflow-hidden text-[#F5F0E8]">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-[#C5A46D]/10 rounded-full blur-2xl pointer-events-none"></div>
+    <div className="w-full my-6 apple-glass-subtle rounded-[26px] p-4 sm:p-6 text-center shadow-xl relative overflow-hidden text-[#F5F0E8]">
+      <div className="absolute top-0 right-0 w-36 h-36 bg-[#C5A46D]/15 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="font-cinzel text-[10px] text-[#C5A46D] tracking-[0.25em] uppercase mb-0.5">
+      <div className="font-cinzel text-[10px] text-[#C5A46D] tracking-[0.28em] uppercase mb-0.5">
         COUNTDOWN TO CELEBRATION
       </div>
       <div className="flex items-center justify-center gap-2 text-[#F5F0E8] font-amiri font-bold text-lg sm:text-xl mb-1">
@@ -38,43 +39,65 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ targetDate, sham
       <p className="text-xs text-[#E0D8CA]/80 mb-4 font-vazir">{shamsiDate}</p>
 
       {timeLeft.isPast ? (
-        <div className="bg-[#3F473D] border border-[#C5A46D]/40 rounded-xl p-3 text-[#F5F0E8] text-sm font-medium">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="apple-glass rounded-2xl p-4 text-[#F5F0E8] text-sm font-medium border border-[#C5A46D]/40"
+        >
           🎉 این پیوند فرخنده رقم خورده است؛ با آرزوی خوشبختی جاودان برای عروس و داماد عزیز! 🌸
-        </div>
+        </motion.div>
       ) : (
-        <div className="grid grid-cols-4 gap-2 sm:gap-4 max-w-md mx-auto">
+        <div className="grid grid-cols-4 gap-2 sm:gap-3.5 max-w-md mx-auto">
           {/* Days */}
-          <div className="bg-[#20231F]/90 border border-[#C5A46D]/30 rounded-xl p-2.5 sm:p-3 flex flex-col items-center justify-center shadow-md">
-            <span className="text-xl sm:text-3xl font-bold font-vazir text-[#F5F0E8]">
+          <motion.div 
+            whileHover={{ y: -2 }}
+            className="apple-glass rounded-2xl p-2.5 sm:p-3.5 flex flex-col items-center justify-center shadow-lg border border-white/10"
+          >
+            <span className="text-2xl sm:text-3xl font-bold font-vazir text-[#F5F0E8] tabular-nums tracking-tight">
               {toPersianDigits(timeLeft.days)}
             </span>
-            <span className="text-[11px] sm:text-xs text-[#E0D8CA]/80 mt-1">روز</span>
-          </div>
+            <span className="text-[10px] sm:text-xs text-[#E0D8CA]/80 mt-1 font-vazir font-medium">روز</span>
+          </motion.div>
 
           {/* Hours */}
-          <div className="bg-[#20231F]/90 border border-[#C5A46D]/30 rounded-xl p-2.5 sm:p-3 flex flex-col items-center justify-center shadow-md">
-            <span className="text-xl sm:text-3xl font-bold font-vazir text-[#F5F0E8]">
+          <motion.div 
+            whileHover={{ y: -2 }}
+            className="apple-glass rounded-2xl p-2.5 sm:p-3.5 flex flex-col items-center justify-center shadow-lg border border-white/10"
+          >
+            <span className="text-2xl sm:text-3xl font-bold font-vazir text-[#F5F0E8] tabular-nums tracking-tight">
               {toPersianDigits(timeLeft.hours)}
             </span>
-            <span className="text-[11px] sm:text-xs text-[#E0D8CA]/80 mt-1">ساعت</span>
-          </div>
+            <span className="text-[10px] sm:text-xs text-[#E0D8CA]/80 mt-1 font-vazir font-medium">ساعت</span>
+          </motion.div>
 
           {/* Minutes */}
-          <div className="bg-[#20231F]/90 border border-[#C5A46D]/30 rounded-xl p-2.5 sm:p-3 flex flex-col items-center justify-center shadow-md">
-            <span className="text-xl sm:text-3xl font-bold font-vazir text-[#F5F0E8]">
+          <motion.div 
+            whileHover={{ y: -2 }}
+            className="apple-glass rounded-2xl p-2.5 sm:p-3.5 flex flex-col items-center justify-center shadow-lg border border-white/10"
+          >
+            <span className="text-2xl sm:text-3xl font-bold font-vazir text-[#F5F0E8] tabular-nums tracking-tight">
               {toPersianDigits(timeLeft.minutes)}
             </span>
-            <span className="text-[11px] sm:text-xs text-[#E0D8CA]/80 mt-1">دقیقه</span>
-          </div>
+            <span className="text-[10px] sm:text-xs text-[#E0D8CA]/80 mt-1 font-vazir font-medium">دقیقه</span>
+          </motion.div>
 
           {/* Seconds */}
-          <div className="bg-[#20231F]/90 border border-[#C5A46D]/30 rounded-xl p-2.5 sm:p-3 flex flex-col items-center justify-center shadow-md relative overflow-hidden">
-            <span className="text-xl sm:text-3xl font-bold font-vazir text-[#C5A46D]">
+          <motion.div 
+            whileHover={{ y: -2 }}
+            className="apple-glass rounded-2xl p-2.5 sm:p-3.5 flex flex-col items-center justify-center shadow-lg border border-[#C5A46D]/40 relative overflow-hidden"
+          >
+            <span className="text-2xl sm:text-3xl font-bold font-vazir text-[#F5C042] tabular-nums tracking-tight">
               {toPersianDigits(timeLeft.seconds)}
             </span>
-            <span className="text-[11px] sm:text-xs text-[#E0D8CA]/80 mt-1">ثانیه</span>
-            <div className="absolute bottom-0 inset-x-0 h-0.5 bg-[#C5A46D]"></div>
-          </div>
+            <span className="text-[10px] sm:text-xs text-[#E0D8CA]/80 mt-1 font-vazir font-medium">ثانیه</span>
+            <motion.div 
+              key={timeLeft.seconds}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.9, ease: 'linear' }}
+              className="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-[#C5A46D] to-[#F5C042]"
+            ></motion.div>
+          </motion.div>
         </div>
       )}
     </div>

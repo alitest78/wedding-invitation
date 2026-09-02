@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
   Save, 
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 import { WeddingDetails, ThemeVariant } from '../types';
 import { MUSIC_TRACKS, POEM_PRESETS, CITY_COORDINATES, INITIAL_WEDDING } from '../data/defaultWedding';
+import { THEME_PRESETS } from '../utils/themePresets';
 
 interface EditCardModalProps {
   isOpen: boolean;
@@ -76,113 +78,86 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
     }
   };
 
+  const tabs = [
+    { id: 'couple', label: 'عروس و داماد', icon: Heart },
+    { id: 'event', label: 'زمان و تاریخ', icon: Calendar },
+    { id: 'venue', label: 'تالار و نقشه', icon: MapPin },
+    { id: 'poem', label: 'شعر و متن', icon: BookOpen },
+    { id: 'music', label: 'موسیقی', icon: Music },
+    { id: 'theme', label: 'تم و ظاهر', icon: Palette },
+  ] as const;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 font-vazir">
-      <div 
-        className="relative w-full max-w-2xl bg-[#20231F] border border-[#C5A46D]/40 rounded-3xl p-5 sm:p-7 text-[#F5F0E8] shadow-2xl overflow-y-auto max-h-[92vh]"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200 font-vazir">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.94, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 20 }}
+        transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+        className="relative w-full max-w-2xl apple-glass rounded-[32px] p-5 sm:p-7 text-[#F5F0E8] shadow-2xl overflow-y-auto max-h-[92vh] border border-white/10"
         id="edit-wedding-modal"
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#C5A46D]/20 pb-4 mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-[#3F473D] border border-[#C5A46D]/40 flex items-center justify-center text-[#C5A46D]">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl apple-glass p-0.5 flex items-center justify-center text-[#F5C042] border border-[#C5A46D]/40 shadow-inner">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <div className="font-cinzel text-[10px] text-[#C5A46D] tracking-[0.2em] uppercase font-bold">
+              <div className="font-cinzel text-[10px] text-[#C5A46D] tracking-[0.25em] uppercase font-bold">
                 CUSTOMIZE INVITATION
               </div>
               <h3 className="font-amiri text-2xl font-bold text-[#F5F0E8]">
                 ویرایش و شخصی‌سازی کارت عروسی
               </h3>
-              <p className="text-[11px] text-[#E0D8CA] font-vazir">
+              <p className="text-[11px] text-[#E0D8CA]">
                 مشخصات زوج، تالار، متن شعر، آهنگ و رنگ‌بندی کارت را تغییر دهید
               </p>
             </div>
           </div>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.88 }}
             id="close-edit-modal-btn"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-[#E0D8CA] hover:text-white transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-[#E0D8CA] hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
-          </button>
+          </motion.button>
         </div>
 
-        {/* Dynamic Omission Notice */}
-        <div className="flex items-center gap-2 bg-[#3F473D]/70 border border-[#C5A46D]/30 rounded-xl px-3.5 py-2 text-xs text-[#F5F0E8] mb-5">
-          <Info className="w-4 h-4 text-[#C5A46D] flex-shrink-0" />
+        {/* Dynamic Omission Notice (Apple Info Pill) */}
+        <div className="flex items-center gap-2.5 apple-glass-pill px-4 py-2.5 rounded-2xl text-xs text-[#F5F0E8] mb-5 border border-white/10 shadow-sm">
+          <Info className="w-4 h-4 text-[#F5C042] flex-shrink-0" />
           <span>هر بخشی که تمایل ندارید در کارت نمایش داده شود، کافیست فیلد آن را خالی بگذارید.</span>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-5 border-b border-[#C5A46D]/20 text-xs">
-          <button
-            type="button"
-            onClick={() => setActiveTab('couple')}
-            className={`px-3 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
-              activeTab === 'couple' ? 'bg-[#C5A46D] text-[#1A1815] font-bold' : 'text-[#E0D8CA] hover:bg-white/5'
-            }`}
-          >
-            <Heart className="w-3.5 h-3.5" />
-            <span>نام عروس و داماد</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('event')}
-            className={`px-3 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
-              activeTab === 'event' ? 'bg-[#C5A46D] text-[#1A1815] font-bold' : 'text-[#E0D8CA] hover:bg-white/5'
-            }`}
-          >
-            <Calendar className="w-3.5 h-3.5" />
-            <span>تاریخ و زمان</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('venue')}
-            className={`px-3 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
-              activeTab === 'venue' ? 'bg-[#C5A46D] text-[#1A1815] font-bold' : 'text-[#E0D8CA] hover:bg-white/5'
-            }`}
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            <span>تالار و لوکیشن</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('poem')}
-            className={`px-3 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
-              activeTab === 'poem' ? 'bg-[#C5A46D] text-[#1A1815] font-bold' : 'text-[#E0D8CA] hover:bg-white/5'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>شعر و متن دعوت</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('music')}
-            className={`px-3 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
-              activeTab === 'music' ? 'bg-[#C5A46D] text-[#1A1815] font-bold' : 'text-[#E0D8CA] hover:bg-white/5'
-            }`}
-          >
-            <Music className="w-3.5 h-3.5" />
-            <span>موسیقی پس‌زمینه</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('theme')}
-            className={`px-3 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap ${
-              activeTab === 'theme' ? 'bg-[#C5A46D] text-[#1A1815] font-bold' : 'text-[#E0D8CA] hover:bg-white/5'
-            }`}
-          >
-            <Palette className="w-3.5 h-3.5" />
-            <span>تم و ظاهر</span>
-          </button>
+        {/* Tab Navigation (Apple Segmented Bar with Spring Pill) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto p-1.5 bg-black/40 rounded-2xl border border-white/10 mb-5 text-xs">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`relative px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap z-10 font-medium ${
+                  isActive ? 'text-[#181B16] font-bold' : 'text-[#E0D8CA] hover:text-white'
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="edit-modal-active-tab-pill"
+                    transition={{ type: 'spring', stiffness: 450, damping: 30 }}
+                    className="absolute inset-0 bg-gradient-to-r from-[#F5C042] to-[#C5A46D] rounded-xl -z-10 shadow-md"
+                  />
+                )}
+                <Icon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Form Body */}
@@ -199,8 +174,8 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                     type="text"
                     value={formData.brideName}
                     onChange={(e) => handleChange('brideName', e.target.value)}
-                    placeholder="مثال: نیلوفر"
-                    className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    placeholder="مثال: ریحانه"
                   />
                 </div>
 
@@ -212,8 +187,8 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                     type="text"
                     value={formData.groomName}
                     onChange={(e) => handleChange('groomName', e.target.value)}
-                    placeholder="مثال: امیرحسین"
-                    className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    placeholder="مثال: پارسا"
                   />
                 </div>
               </div>
@@ -221,59 +196,59 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-[#C5A46D] mb-1">
-                    خانواده محترم عروس (اختیاری):
+                    خانواده عروس (اختیاری):
                   </label>
                   <input
                     type="text"
-                    value={formData.brideParents || ''}
+                    value={formData.brideParents}
                     onChange={(e) => handleChange('brideParents', e.target.value)}
-                    placeholder="مثال: رضایی (خالی بگذارید تا حذف شود)"
-                    className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    placeholder="مثال: رضایی"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-[#C5A46D] mb-1">
-                    خانواده محترم داماد (اختیاری):
+                    خانواده داماد (اختیاری):
                   </label>
                   <input
                     type="text"
-                    value={formData.groomParents || ''}
+                    value={formData.groomParents}
                     onChange={(e) => handleChange('groomParents', e.target.value)}
-                    placeholder="مثال: بهرامی (خالی بگذارید تا حذف شود)"
-                    className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    placeholder="مثال: تهرانی"
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* Tab 2: Date & Times */}
+          {/* Tab 2: Date and Time */}
           {activeTab === 'event' && (
             <div className="space-y-4 animate-in fade-in duration-150">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-[#C5A46D] mb-1">
-                    تاریخ مراسم به حروف شمسی:
+                    تاریخ شمسی مراسم:
                   </label>
                   <input
                     type="text"
                     value={formData.ceremonyDateShamsi}
                     onChange={(e) => handleChange('ceremonyDateShamsi', e.target.value)}
-                    placeholder="مثال: پنج‌شنبه، ۲۴ مهر ۱۴۰۵"
-                    className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    placeholder="مثال: جمعه ۲۴ مهر ماه ۱۴۰۵"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-[#C5A46D] mb-1">
-                    تاریخ میلادی (جهت تایمر معکوس و تقویم):
+                    تاریخ میلادی (جهت شمارش معکوس):
                   </label>
                   <input
                     type="date"
                     value={formData.ceremonyDateMiladi}
                     onChange={(e) => handleChange('ceremonyDateMiladi', e.target.value)}
-                    className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
                   />
                 </div>
               </div>
@@ -281,59 +256,73 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-[#C5A46D] mb-1">
-                    ساعت برگزاری جشن:
+                    ساعت کلی جشن:
                   </label>
                   <input
                     type="text"
-                    value={formData.ceremonyTime || ''}
+                    value={formData.ceremonyTime}
                     onChange={(e) => handleChange('ceremonyTime', e.target.value)}
+                    className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
                     placeholder="۱۹:۰۰ الی ۲۳:۳۰"
-                    className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-[#C5A46D] mb-1">
-                    ساعت پذیرایی عصرانه (اختیاری):
+                    ساعت پذیرایی (اختیاری):
                   </label>
                   <input
                     type="text"
-                    value={formData.receptionTime || ''}
+                    value={formData.receptionTime}
                     onChange={(e) => handleChange('receptionTime', e.target.value)}
-                    placeholder="ساعت ۱۹:۳۰"
-                    className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    placeholder="۱۹:۳۰"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-[#C5A46D] mb-1">
-                    ساعت صرف شام (اختیاری):
+                    ساعت ضیافت شام (اختیاری):
                   </label>
                   <input
                     type="text"
-                    value={formData.dinnerTime || ''}
+                    value={formData.dinnerTime}
                     onChange={(e) => handleChange('dinnerTime', e.target.value)}
-                    placeholder="ساعت ۲۱:۴۵"
-                    className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                    placeholder="۲۱:۳۰"
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* Tab 3: Venue & Routing Location */}
+          {/* Tab 3: Venue & Map */}
           {activeTab === 'venue' && (
             <div className="space-y-4 animate-in fade-in duration-150">
+              <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                <span className="text-xs text-[#C5A46D] ml-2">انتخاب سریع شهر:</span>
+                {Object.entries(CITY_COORDINATES).map(([key, city]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleCitySelect(key as any)}
+                    className="apple-glass text-xs text-[#E0D8CA] hover:text-[#F5C042] px-2.5 py-1 rounded-lg border border-white/10 transition-colors"
+                  >
+                    {city.name}
+                  </button>
+                ))}
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-[#C5A46D] mb-1">
-                  نام تالار / باغ تالار:
+                  نام تالار یا باغ تالار:
                 </label>
                 <input
                   type="text"
-                  value={formData.hallName || ''}
+                  value={formData.hallName}
                   onChange={(e) => handleChange('hallName', e.target.value)}
-                  placeholder="مثال: باغ تالار قصر نیلوفر شیراز"
-                  className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                  className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                  placeholder="مثال: باغ تالار رویایی اردیبهشت"
                 />
               </div>
 
@@ -343,30 +332,11 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                 </label>
                 <input
                   type="text"
-                  value={formData.hallAddress || ''}
+                  value={formData.hallAddress}
                   onChange={(e) => handleChange('hallAddress', e.target.value)}
-                  placeholder="شیراز، ابتدای جاده صدرا، کوچه بهارستان ۷"
-                  className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                  className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D]"
+                  placeholder="مثال: شیراز، کیلومتر ۵ جاده صدرا..."
                 />
-              </div>
-
-              {/* Quick City Presets for Coordinates */}
-              <div>
-                <label className="block text-xs font-medium text-[#C5A46D] mb-1.5">
-                  انتخاب سریع موقعیت شهر تالار برای مسیریاب:
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(CITY_COORDINATES).map(([key, item]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => handleCitySelect(key as any)}
-                      className="px-3 py-1.5 rounded-lg text-xs bg-[#3F473D] hover:bg-[#707563] text-[#F5F0E8] border border-[#C5A46D]/30 cursor-pointer transition-colors"
-                    >
-                      {item.name}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -379,10 +349,9 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                     step="0.0001"
                     value={formData.hallLat}
                     onChange={(e) => handleChange('hallLat', parseFloat(e.target.value) || 0)}
-                    className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D] text-left font-mono"
+                    className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] font-mono text-left focus:outline-none focus:border-[#C5A46D]"
                   />
                 </div>
-
                 <div>
                   <label className="block text-xs font-medium text-[#C5A46D] mb-1">
                     طول جغرافیایی (Longitude):
@@ -392,295 +361,210 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
                     step="0.0001"
                     value={formData.hallLng}
                     onChange={(e) => handleChange('hallLng', parseFloat(e.target.value) || 0)}
-                    className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D] text-left font-mono"
+                    className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] font-mono text-left focus:outline-none focus:border-[#C5A46D]"
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* Tab 4: Poem & Texts */}
+          {/* Tab 4: Poem & Notes */}
           {activeTab === 'poem' && (
             <div className="space-y-4 animate-in fade-in duration-150">
-              {/* Poem Presets */}
               <div>
-                <label className="block text-xs font-medium text-[#C5A46D] mb-1.5">
-                  انتخاب از میان اشعار زیبای پیشنهادی:
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {POEM_PRESETS.map((p, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleChange('poem', `${p.text}\n(${p.author})`)}
-                      className="text-right p-2.5 rounded-xl text-xs bg-[#171A16] hover:bg-[#3F473D] border border-[#C5A46D]/20 text-[#E0D8CA] transition-colors"
-                    >
-                      <div className="font-bold text-[#C5A46D] mb-0.5">{p.title}</div>
-                      <div className="text-[11px] text-[#E0D8CA]/80 line-clamp-2">{p.text}</div>
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-[#C5A46D]">
+                    شعر و بیت آغازین کارت:
+                  </label>
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="text-[#8C9488]">نمونه‌های آماده:</span>
+                    {POEM_PRESETS.map((p, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleChange('poem', p.text)}
+                        className="apple-glass text-[11px] text-[#E0D8CA] hover:text-[#F5C042] px-2 py-0.5 rounded-md border border-white/10"
+                      >
+                        {p.title}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-[#C5A46D] mb-1">
-                  متن شعر یا سرآغاز کارت (اختیاری):
-                </label>
                 <textarea
                   rows={3}
-                  value={formData.poem || ''}
+                  value={formData.poem}
                   onChange={(e) => handleChange('poem', e.target.value)}
-                  placeholder="اگر مایلید شعری نمایش داده نشود، این فیلد را پاک کنید"
-                  className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl p-3 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D] leading-relaxed resize-none"
+                  className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl p-3 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D] leading-loose resize-none"
+                  placeholder="متن شعر..."
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-[#C5A46D] mb-1">
-                  متن دعوت و خوش‌آمدگویی:
+                  متن دعوت و خوش‌آمدگویی رسمی:
                 </label>
                 <textarea
                   rows={3}
-                  value={formData.invitationNote || ''}
+                  value={formData.invitationNote}
                   onChange={(e) => handleChange('invitationNote', e.target.value)}
-                  placeholder="متن دلخواه دعوت مهمانان"
-                  className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl p-3 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D] leading-relaxed resize-none"
+                  className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl p-3 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D] leading-relaxed resize-none"
+                  placeholder="متن خوش‌آمدگویی..."
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-[#C5A46D] mb-1">
-                  یادداشت و نکات مهمانان (اختیاری):
+                  یادداشت مهمانان (اختیاری):
                 </label>
                 <textarea
                   rows={2}
-                  value={formData.guestNotes || ''}
+                  value={formData.guestNotes}
                   onChange={(e) => handleChange('guestNotes', e.target.value)}
-                  placeholder="مثال: پارکینگ اختصاصی در محوطه مهیا می‌باشد"
-                  className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl p-3 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D] leading-relaxed resize-none"
+                  className="w-full bg-black/35 border border-[#C5A46D]/35 rounded-xl p-3 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D] leading-relaxed resize-none"
+                  placeholder="یادداشت‌های اختصاصی مهمانان..."
                 />
               </div>
             </div>
           )}
 
-          {/* Tab 5: Music selection */}
+          {/* Tab 5: Music Selection */}
           {activeTab === 'music' && (
             <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="text-xs text-[#C5A46D] font-medium">
-                انتخاب یا تغییر ترانه پس‌زمینه کارت:
-              </div>
-
-              {/* Preloaded tracks list */}
+              <label className="block text-xs font-medium text-[#C5A46D] mb-1">
+                انتخاب از لیست آهنگ‌های بی‌کلام و رویایی:
+              </label>
               <div className="space-y-2">
                 {MUSIC_TRACKS.map((track) => (
-                  <button
+                  <div
                     key={track.id}
-                    type="button"
                     onClick={() => {
                       setFormData((prev) => ({
                         ...prev,
                         musicUrl: track.src,
                         musicTitle: track.title,
-                        musicArtist: track.artist,
+                        musicArtist: track.artist
                       }));
                     }}
-                    className={`w-full text-right p-3 rounded-xl border text-xs flex items-center justify-between transition-all cursor-pointer ${
+                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
                       formData.musicUrl === track.src
-                        ? 'bg-[#3F473D] border-[#C5A46D] text-[#F5F0E8] font-bold shadow-md'
-                        : 'bg-[#171A16] border-[#C5A46D]/20 text-[#E0D8CA] hover:bg-[#3F473D]/50'
+                        ? 'bg-[#C5A46D]/20 border-[#C5A46D] text-[#F5C042] shadow-md'
+                        : 'apple-glass border-white/10 text-[#E0D8CA] hover:bg-white/5'
                     }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <Music className="w-4 h-4 text-[#C5A46D]" />
+                    <div className="flex items-center gap-3">
+                      <Music className="w-4 h-4" />
                       <div>
-                        <div>{track.title}</div>
-                        <div className="text-[10px] text-[#E0D8CA]/80 font-normal">{track.artist}</div>
+                        <div className="text-xs font-bold">{track.title}</div>
+                        <div className="text-[10px] opacity-70">{track.artist}</div>
                       </div>
                     </div>
-                    {track.isPopular && (
-                      <span className="text-[10px] bg-[#C5A46D]/20 text-[#C5A46D] px-2 py-0.5 rounded-full border border-[#C5A46D]/40">
-                        منتخب
+                    {formData.musicUrl === track.src && (
+                      <span className="text-[10px] bg-[#C5A46D] text-[#181B16] font-bold px-2 py-0.5 rounded-full">
+                        انتخاب شده
                       </span>
                     )}
-                  </button>
+                  </div>
                 ))}
               </div>
 
-              {/* Custom URL Input */}
-              <div className="pt-2">
-                <label className="block text-xs font-medium text-[#C5A46D] mb-1">
-                  یا درج لینک مستقیم فایل صوتی (MP3 URL):
-                </label>
-                <input
-                  type="url"
-                  value={formData.musicUrl}
-                  onChange={(e) => handleChange('musicUrl', e.target.value)}
-                  placeholder="https://example.com/song.mp3"
-                  className="w-full bg-[#171A16] border border-[#C5A46D]/30 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F0E8] focus:outline-none focus:border-[#C5A46D] text-left font-mono"
-                />
-              </div>
-
-              {/* File upload alternative */}
-              <div>
+              {/* Custom Audio Upload */}
+              <div className="pt-3 border-t border-[#C5A46D]/20">
                 <label className="block text-xs font-medium text-[#C5A46D] mb-1.5">
-                  یا بارگذاری فایل آهنگ از دستگاه شما:
+                  یا آپلود آهنگ دلخواه (mp3 / m4a):
                 </label>
-                <label className="flex items-center justify-center gap-2 bg-[#171A16] hover:bg-[#3F473D]/50 border border-dashed border-[#C5A46D]/40 p-3.5 rounded-xl text-xs text-[#F5F0E8] cursor-pointer transition-colors">
-                  <Upload className="w-4 h-4 text-[#C5A46D]" />
-                  <span>انتخاب فایل صوتی MP3 از گوشی یا سیستم</span>
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            </div>
-          )}
-
-          {/* Tab 6: Theme and Visuals */}
-          {activeTab === 'theme' && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <div>
-                <label className="block text-xs font-medium text-[#C5A46D] mb-2">
-                  طرح و پالت رنگی کارت دعوت:
-                </label>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleChange('theme', 'sage-gold')}
-                    className={`p-3 rounded-2xl border text-right transition-all cursor-pointer flex items-center justify-between ${
-                      formData.theme === 'sage-gold'
-                        ? 'bg-[#3F473D] border-[#C5A46D] ring-2 ring-[#C5A46D]/50 text-[#F5F0E8]'
-                        : 'bg-[#171A16] border-[#C5A46D]/20 text-[#E0D8CA]'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-bold text-[#F5F0E8] text-xs">سبز مریم‌گلی و عاجی (پیش‌فرض مدرن)</div>
-                      <div className="text-[10px] text-[#E0D8CA]/80">پس‌زمینه عاجی، کارت سبز مریم‌گلی و خطوط طلایی</div>
-                    </div>
-                    <div className="w-6 h-6 rounded-full bg-[#3F473D] border-2 border-[#C5A46D] shadow"></div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleChange('theme', 'emerald-gold')}
-                    className={`p-3 rounded-2xl border text-right transition-all cursor-pointer flex items-center justify-between ${
-                      formData.theme === 'emerald-gold'
-                        ? 'bg-emerald-950 border-emerald-400 ring-2 ring-emerald-500/50 text-[#F5F0E8]'
-                        : 'bg-[#171A16] border-[#C5A46D]/20 text-[#E0D8CA]'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-bold text-emerald-300 text-xs">زمرد شاهانه و طلای ناب</div>
-                      <div className="text-[10px] text-[#E0D8CA]/80">شکوه زمرد و طلاکاری اصیل ایرانی</div>
-                    </div>
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-800 to-amber-300 shadow"></div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleChange('theme', 'gold-ivory')}
-                    className={`p-3 rounded-2xl border text-right transition-all cursor-pointer flex items-center justify-between ${
-                      formData.theme === 'gold-ivory'
-                        ? 'bg-stone-900 border-amber-400 ring-2 ring-amber-500/50 text-[#F5F0E8]'
-                        : 'bg-[#171A16] border-[#C5A46D]/20 text-[#E0D8CA]'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-bold text-amber-300 text-xs">اونیکس و طلای ۲۴ عیار</div>
-                      <div className="text-[10px] text-[#E0D8CA]/80">مجلل و چشم‌نواز با جلوه طلای مذاب</div>
-                    </div>
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-600 to-yellow-300 shadow"></div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleChange('theme', 'velvet-ruby')}
-                    className={`p-3 rounded-2xl border text-right transition-all cursor-pointer flex items-center justify-between ${
-                      formData.theme === 'velvet-ruby'
-                        ? 'bg-rose-950 border-rose-400 ring-2 ring-rose-500/50 text-[#F5F0E8]'
-                        : 'bg-[#171A16] border-[#C5A46D]/20 text-[#E0D8CA]'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-bold text-rose-300 text-xs">زرشکی سلطنتی و مروارید</div>
-                      <div className="text-[10px] text-[#E0D8CA]/80">مخمل عمیق درباری و گرمای شمع</div>
-                    </div>
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-rose-950 to-pink-400 shadow"></div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleChange('theme', 'royal-navy')}
-                    className={`p-3 rounded-2xl border text-right transition-all cursor-pointer flex items-center justify-between ${
-                      formData.theme === 'royal-navy'
-                        ? 'bg-blue-950 border-blue-400 ring-2 ring-blue-500/50 text-[#F5F0E8]'
-                        : 'bg-[#171A16] border-[#C5A46D]/20 text-[#E0D8CA]'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-bold text-blue-300 text-xs">یاقوت کبود و پلاتین نقره‌ای</div>
-                      <div className="text-[10px] text-[#E0D8CA]/80">لاجوردی شاهانه و نقره شب</div>
-                    </div>
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-900 to-sky-300 shadow"></div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleChange('theme', 'blush-rose')}
-                    className={`p-3 rounded-2xl border text-right transition-all cursor-pointer flex items-center justify-between ${
-                      formData.theme === 'blush-rose'
-                        ? 'bg-[#403632] border-[#C5A46D] ring-2 ring-[#C5A46D]/50 text-[#F5F0E8]'
-                        : 'bg-[#171A16] border-[#C5A46D]/20 text-[#E0D8CA]'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-bold text-amber-200 text-xs">عاجی ابریشمی و رزگلد (روشن)</div>
-                      <div className="text-[10px] text-[#E0D8CA]/80">عاجی ملایم و لوکس پودری</div>
-                    </div>
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#f3ebe0] to-[#fda4af] shadow border border-stone-600"></div>
-                  </button>
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 apple-glass-pill px-4 py-2.5 rounded-xl text-xs text-[#F5F0E8] cursor-pointer hover:bg-white/10 transition-colors border border-white/10">
+                    <Upload className="w-4 h-4 text-[#F5C042]" />
+                    <span>انتخاب فایل موسیقی از دستگاه</span>
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  <span className="text-[11px] text-[#E0D8CA]/70 truncate max-w-xs">
+                    {formData.musicTitle}
+                  </span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Action buttons footer */}
-          <div className="flex items-center justify-between pt-5 border-t border-[#C5A46D]/20">
-            <button
+          {/* Tab 6: Themes */}
+          {activeTab === 'theme' && (
+            <div className="space-y-3 animate-in fade-in duration-150">
+              <label className="block text-xs font-medium text-[#C5A46D] mb-2">
+                پالت‌های رنگی و طراحی کارت:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {Object.values(THEME_PRESETS).map((t) => (
+                  <div
+                    key={t.id}
+                    onClick={() => handleChange('theme', t.id)}
+                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                      formData.theme === t.id
+                        ? 'bg-[#C5A46D]/20 border-[#C5A46D] text-[#F5C042] shadow-md'
+                        : 'apple-glass border-white/10 text-[#E0D8CA] hover:bg-white/5'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="w-6 h-6 rounded-full border border-white/30 shadow-md flex-shrink-0"
+                        style={{ backgroundColor: t.previewColor }}
+                      ></span>
+                      <div>
+                        <div className="text-xs font-bold text-[#F5F0E8]">{t.nameFa}</div>
+                        <div className="text-[10px] opacity-70">{t.nameEn}</div>
+                      </div>
+                    </div>
+                    {formData.theme === t.id && (
+                      <span className="text-[10px] bg-[#C5A46D] text-[#181B16] font-bold px-2 py-0.5 rounded-full">
+                        فعال
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Modal Footer Actions */}
+          <div className="pt-5 border-t border-[#C5A46D]/20 flex items-center justify-between gap-3">
+            <motion.button
+              whileTap={{ scale: 0.94 }}
               type="button"
-              id="reset-wedding-form-btn"
               onClick={handleReset}
-              className="flex items-center gap-1.5 text-xs text-[#E0D8CA] hover:text-rose-300 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-xs text-[#8C9488] hover:text-rose-300 transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>بازنشانی پیش‌فرض</span>
-            </button>
+            </motion.button>
 
             <div className="flex items-center gap-2">
-              <button
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl text-xs text-[#E0D8CA] hover:bg-white/5 transition-colors cursor-pointer"
+                className="apple-glass text-xs text-[#E0D8CA] px-4 py-2.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer border border-white/10"
               >
                 انصراف
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.95 }}
                 type="submit"
-                id="save-wedding-form-btn"
-                className="flex items-center gap-1.5 bg-gradient-to-r from-[#C5A46D] to-[#9E7B3B] text-[#1A1815] font-bold px-6 py-2.5 rounded-xl text-xs shadow-lg transition-all active:scale-95 cursor-pointer hover:brightness-110"
+                id="save-edit-modal-btn"
+                className="flex items-center gap-2 bg-gradient-to-r from-[#F5C042] to-[#C5A46D] text-[#181B16] font-bold px-5 py-2.5 rounded-xl text-xs shadow-lg cursor-pointer"
               >
-                <Save className="w-4 h-4 text-[#1A1815]" />
+                <Save className="w-4 h-4 text-[#181B16]" />
                 <span>ذخیره تغییرات کارت</span>
-              </button>
+              </motion.button>
             </div>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 };

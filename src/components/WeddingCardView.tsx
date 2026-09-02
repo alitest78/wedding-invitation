@@ -8,7 +8,6 @@ import {
   Share2,
   Edit3,
   RotateCcw,
-  Sparkles,
   Printer,
   CalendarPlus,
   Palette,
@@ -87,34 +86,41 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
       initial={{ opacity: 0, y: 35 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -35 }}
-      transition={{ duration: 0.7, ease: 'easeOut' }}
-      className="min-h-screen pb-24 px-3 sm:px-6 pt-3 max-w-4xl mx-auto"
+      transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+      className="min-h-screen pb-28 px-3 sm:px-6 pt-3 max-w-4xl mx-auto"
       id="wedding-invitation-card-view"
     >
-      {/* Top Floating Utility Navigation Dock */}
-      <div className="sticky top-3 z-30 mb-6 flex flex-wrap items-center justify-between gap-2.5 bg-[#20231F]/90 backdrop-blur-xl px-4 py-2.5 rounded-2xl border border-[#C5A46D]/40 shadow-2xl text-[#F5F0E8]">
+      {/* Top Floating Utility Navigation Dock (Apple Dynamic Island Capsule) */}
+      <motion.div 
+        layout
+        className="sticky top-3 z-30 mb-6 flex flex-wrap items-center justify-between gap-2.5 apple-glass-pill px-4 py-2.5 rounded-full shadow-2xl text-[#F5F0E8]"
+      >
         <div className="flex items-center gap-2">
           {/* Back to Envelope */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.94 }}
             id="re-envelope-btn"
             onClick={onCloseToEnvelope}
-            className="flex items-center gap-1.5 text-xs text-[#F5F0E8] hover:text-white hover:bg-[#707563] px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs text-[#F5F0E8] hover:bg-white/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5 text-[#C5A46D]" />
             <span className="hidden xs:inline">بازگشت به پاکت</span>
-          </button>
+          </motion.button>
 
           {/* Theme Switcher */}
           <div className="relative">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.94 }}
               id="card-theme-toggle-btn"
               onClick={() => setShowThemePicker(!showThemePicker)}
-              className="flex items-center gap-1.5 text-xs text-[#F5F0E8] hover:bg-[#707563] px-3 py-1.5 rounded-xl transition-colors cursor-pointer border border-[#C5A46D]/30"
+              className="flex items-center gap-1.5 text-xs text-[#F5F0E8] hover:bg-white/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer border border-white/10"
               title="تغییر تم رنگی"
             >
               <Palette className="w-3.5 h-3.5 text-[#C5A46D]" />
               <span className="hidden sm:inline">پالت: {currentTheme.nameFa.split(' ')[0]}</span>
-            </button>
+            </motion.button>
 
             <AnimatePresence>
               {showThemePicker && (
@@ -122,21 +128,23 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
                   initial={{ opacity: 0, y: 8, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                  className="absolute top-full right-0 mt-2 p-2 w-64 bg-[#20231F]/95 backdrop-blur-2xl border border-[#C5A46D]/40 rounded-2xl shadow-2xl z-50 space-y-1.5"
+                  transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                  className="absolute top-full right-0 mt-2 p-2 w-64 apple-glass rounded-[24px] shadow-2xl z-50 space-y-1.5"
                 >
-                  <div className="text-[11px] font-semibold text-[#C5A46D] px-2 py-1 border-b border-[#C5A46D]/20">
+                  <div className="text-[11px] font-semibold text-[#C5A46D] px-2.5 py-1 border-b border-[#C5A46D]/20">
                     انتخاب پالت رنگی کارت:
                   </div>
                   {Object.values(THEME_PRESETS).map((t) => (
-                    <button
+                    <motion.button
                       key={t.id}
+                      whileTap={{ scale: 0.97 }}
                       onClick={() => {
                         if (onThemeChange) onThemeChange(t.id);
                         setShowThemePicker(false);
                       }}
-                      className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
                         wedding.theme === t.id
-                          ? 'bg-[#707563] text-[#F5F0E8] font-semibold border border-[#C5A46D]/50'
+                          ? 'bg-gradient-to-r from-[#C5A46D] to-[#9E7B3B] text-[#181B16] font-bold shadow-md'
                           : 'text-[#E0D8CA] hover:bg-white/10 hover:text-white'
                       }`}
                     >
@@ -147,7 +155,7 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
                         ></span>
                         <span className="truncate">{t.nameFa}</span>
                       </div>
-                    </button>
+                    </motion.button>
                   ))}
                 </motion.div>
               )}
@@ -155,32 +163,35 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
           </div>
 
           {/* Toggle Petals */}
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             id="card-toggle-petals-btn"
             onClick={onTogglePetals}
-            className={`hidden sm:flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl transition-colors cursor-pointer ${
-              petalsActive ? 'text-[#C5A46D] bg-[#707563]/50 border border-[#C5A46D]/40' : 'text-[#E0D8CA] hover:text-white'
+            className={`hidden sm:flex items-center gap-1 text-xs px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
+              petalsActive ? 'text-[#F5C042] border border-[#C5A46D]/50 bg-black/20' : 'text-[#E0D8CA] hover:text-white'
             }`}
             title="بارش گلبرگ"
           >
             <Flower2 className="w-3.5 h-3.5 text-[#C5A46D]" />
-          </button>
+          </motion.button>
         </div>
 
         {/* Right Actions: Calendar, Edit, Share, Print */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Add to Calendar (if date exists) */}
+          {/* Add to Calendar */}
           {hasCountdown && (
             <div className="relative">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.94 }}
                 id="add-to-calendar-btn"
                 onClick={() => setShowCalendarMenu(!showCalendarMenu)}
-                className="flex items-center gap-1.5 text-xs text-[#F5F0E8] bg-[#20231F] hover:bg-[#707563] border border-[#C5A46D]/40 px-3 py-1.5 rounded-xl transition-colors cursor-pointer shadow"
+                className="flex items-center gap-1.5 text-xs text-[#F5F0E8] hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer shadow"
                 title="افزودن به تقویم گوگل و اپل"
               >
                 <CalendarPlus className="w-3.5 h-3.5 text-[#C5A46D]" />
                 <span className="hidden sm:inline">افزودن به تقویم</span>
-              </button>
+              </motion.button>
 
               <AnimatePresence>
                 {showCalendarMenu && (
@@ -188,14 +199,15 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
                     initial={{ opacity: 0, y: 8, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                    className="absolute top-full left-0 mt-2 p-2 w-52 bg-[#20231F]/95 backdrop-blur-2xl border border-[#C5A46D]/40 rounded-2xl shadow-2xl z-50 space-y-1"
+                    transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                    className="absolute top-full left-0 mt-2 p-2 w-56 apple-glass rounded-[22px] shadow-2xl z-50 space-y-1"
                   >
                     <a
                       href={calendarLinks.googleCalendar}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => setShowCalendarMenu(false)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-[#F5F0E8] hover:bg-[#707563] transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-[#F5F0E8] hover:bg-white/10 transition-colors"
                     >
                       <span>📅 تقویم گوگل (Google Calendar)</span>
                     </a>
@@ -203,7 +215,7 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
                       href={calendarLinks.icsDataUri}
                       download={`wedding-${wedding.brideName || 'card'}-${wedding.groomName || 'card'}.ics`}
                       onClick={() => setShowCalendarMenu(false)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-[#F5F0E8] hover:bg-[#707563] transition-colors"
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-[#F5F0E8] hover:bg-white/10 transition-colors"
                     >
                       <span>🍏 تقویم اپل / اوت‌لوک (.ics)</span>
                     </a>
@@ -213,42 +225,47 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
             </div>
           )}
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.94 }}
             id="card-edit-btn"
             onClick={onOpenEditModal}
-            className="flex items-center gap-1.5 bg-[#20231F] hover:bg-[#707563] text-[#F5F0E8] border border-[#C5A46D]/40 px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer shadow"
+            className="flex items-center gap-1.5 text-[#F5F0E8] hover:bg-white/10 border border-white/10 px-3.5 py-1.5 rounded-full text-xs transition-colors cursor-pointer shadow"
           >
             <Edit3 className="w-3.5 h-3.5 text-[#C5A46D]" />
             <span className="hidden sm:inline">ویرایش</span>
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.94 }}
             id="card-share-btn"
             onClick={onOpenShareModal}
-            className="flex items-center gap-1.5 bg-[#20231F] hover:bg-[#707563] text-[#F5F0E8] font-bold px-3.5 py-1.5 rounded-xl text-xs border border-[#C5A46D] transition-all shadow-md cursor-pointer active:scale-95"
+            className="flex items-center gap-1.5 bg-gradient-to-r from-[#F5C042] to-[#C5A46D] text-[#181B16] font-bold px-4 py-1.5 rounded-full text-xs shadow-md cursor-pointer"
           >
-            <Share2 className="w-3.5 h-3.5 text-[#C5A46D]" />
+            <Share2 className="w-3.5 h-3.5 text-[#181B16]" />
             <span>اشتراک</span>
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.9 }}
             id="card-print-btn"
             onClick={handlePrint}
-            className="hidden md:flex items-center gap-1 text-xs text-[#E0D8CA] hover:text-white hover:bg-[#707563] p-2 rounded-xl transition-colors cursor-pointer"
+            className="hidden md:flex items-center gap-1 text-xs text-[#E0D8CA] hover:text-white hover:bg-white/10 p-2 rounded-full transition-colors cursor-pointer"
             title="چاپ کارت"
           >
             <Printer className="w-3.5 h-3.5 text-[#C5A46D]" />
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Main Luxury Wedding Invitation Card Container */}
-      <div className={`rounded-3xl border border-[#C5A46D]/40 bg-[#3F473D] text-[#F5F0E8] backdrop-blur-2xl p-5 sm:p-12 shadow-2xl relative overflow-hidden`}>
+      <div className={`rounded-[32px] apple-card-border bg-[#3F473D] text-[#F5F0E8] backdrop-blur-2xl p-5 sm:p-12 shadow-2xl relative overflow-hidden`}>
         {/* Persian Ornate Foil Corners & Borders */}
-        <div className="absolute inset-3 sm:inset-5 border border-[#C5A46D]/30 rounded-2xl pointer-events-none"></div>
-        <div className="absolute inset-5 sm:inset-7 border border-[#C5A46D]/15 rounded-xl pointer-events-none"></div>
+        <div className="absolute inset-3 sm:inset-5 border border-[#C5A46D]/25 rounded-[24px] pointer-events-none"></div>
+        <div className="absolute inset-5 sm:inset-7 border border-[#C5A46D]/12 rounded-[20px] pointer-events-none"></div>
 
-        {/* Botanical Corner Flourishes (Replaced text with elegant botanical ornaments) */}
+        {/* Botanical Corner Flourishes */}
         <div className="absolute top-4 left-4 text-[#C5A46D]/40 text-lg sm:text-xl pointer-events-none select-none">
           ❦
         </div>
@@ -264,7 +281,7 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
 
         {/* Top Poetic & Sacred Invocation in Amiri & Cinzel */}
         <div className="text-center relative z-10 mb-6 sm:mb-9 space-y-1">
-          <div className="font-cinzel text-[11px] sm:text-xs text-[#C5A46D] tracking-[0.3em] uppercase font-semibold">
+          <div className="font-cinzel text-[11px] sm:text-xs text-[#C5A46D] tracking-[0.3em] uppercase font-bold">
             WEDDING INVITATION
           </div>
 
@@ -278,17 +295,17 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
           {hasParentsSection && (
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 text-[#F5F0E8] text-xs sm:text-sm font-vazir my-3">
               {hasGroomParents && (
-                <span className="bg-[#20231F]/50 border border-[#C5A46D]/30 px-3.5 py-1.5 rounded-full backdrop-blur-sm">
+                <span className="apple-glass px-4 py-1.5 rounded-full border border-white/10">
                   خانواده محترم {wedding.groomParents}
                 </span>
               )}
               {hasGroomParents && hasBrideParents && (
-                <div className="w-6 h-6 rounded-full bg-[#20231F] border border-[#C5A46D]/50 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-full apple-glass flex items-center justify-center border border-[#C5A46D]/50 shadow-inner">
                   <Heart className="w-3.5 h-3.5 text-[#C5A46D] fill-[#C5A46D]" />
                 </div>
               )}
               {hasBrideParents && (
-                <span className="bg-[#20231F]/50 border border-[#C5A46D]/30 px-3.5 py-1.5 rounded-full backdrop-blur-sm">
+                <span className="apple-glass px-4 py-1.5 rounded-full border border-white/10">
                   خانواده محترم {wedding.brideParents}
                 </span>
               )}
@@ -313,7 +330,7 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
               )}
 
               {wedding.brideName?.trim() && wedding.groomName?.trim() && (
-                <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#20231F] border border-[#C5A46D] shadow-inner">
+                <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full apple-glass border border-[#C5A46D] shadow-inner">
                   <span className="font-playfair italic text-2xl text-[#C5A46D] font-bold">&</span>
                 </div>
               )}
@@ -329,7 +346,7 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
 
         {/* Persian Poem Banner in Amiri (Only if filled) */}
         {hasPoem && (
-          <div className="relative z-10 max-w-xl mx-auto my-7 text-center bg-[#20231F]/60 border border-[#C5A46D]/40 rounded-2xl p-5 sm:p-7 shadow-inner backdrop-blur-sm">
+          <div className="relative z-10 max-w-xl mx-auto my-7 text-center apple-glass rounded-[24px] p-5 sm:p-7 shadow-xl border border-white/10">
             <div className="text-[#C5A46D] text-2xl font-amiri mb-1">❦</div>
             <p className="font-amiri text-xl sm:text-2xl font-bold text-[#F5F0E8] leading-loose whitespace-pre-line">
               {wedding.poem}
@@ -347,42 +364,51 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
           </div>
         )}
 
-        {/* Event Schedule Bento Grid (Only if at least one item filled) */}
+        {/* Event Schedule Bento Grid (Apple HIG Bento layout) */}
         {scheduleItemCount > 0 && (
           <div className={`relative z-10 my-7 grid grid-cols-1 ${
             scheduleItemCount === 1 ? 'max-w-xs' : scheduleItemCount === 2 ? 'sm:grid-cols-2 max-w-lg' : 'sm:grid-cols-3 max-w-2xl'
           } gap-3 mx-auto text-center font-vazir`}>
             {/* Ceremony Date */}
             {hasDate && (
-              <div className="bg-[#20231F]/60 border border-[#C5A46D]/30 hover:border-[#C5A46D]/70 rounded-2xl p-4 flex flex-col items-center justify-center transition-colors shadow-md">
+              <motion.div 
+                whileHover={{ y: -2 }}
+                className="apple-glass rounded-[22px] p-4 flex flex-col items-center justify-center transition-all shadow-lg border border-white/10"
+              >
                 <Calendar className="w-6 h-6 text-[#C5A46D] mb-1.5" />
                 <span className="text-[11px] text-[#E0D8CA]/80">تاریخ فرخنده مراسم</span>
                 <span className="text-xs sm:text-sm font-bold text-[#F5F0E8] mt-1">
                   {wedding.ceremonyDateShamsi}
                 </span>
-              </div>
+              </motion.div>
             )}
 
             {/* Ceremony Time */}
             {hasTime && (
-              <div className="bg-[#20231F]/60 border border-[#C5A46D]/30 hover:border-[#C5A46D]/70 rounded-2xl p-4 flex flex-col items-center justify-center transition-colors shadow-md">
+              <motion.div 
+                whileHover={{ y: -2 }}
+                className="apple-glass rounded-[22px] p-4 flex flex-col items-center justify-center transition-all shadow-lg border border-white/10"
+              >
                 <Clock className="w-6 h-6 text-[#C5A46D] mb-1.5" />
                 <span className="text-[11px] text-[#E0D8CA]/80">ساعت حضور و شادمانی</span>
                 <span className="text-xs sm:text-sm font-bold text-[#F5F0E8] mt-1">
                   {wedding.ceremonyTime}
                 </span>
-              </div>
+              </motion.div>
             )}
 
             {/* Hall Name */}
             {hasHall && (
-              <div className="bg-[#20231F]/60 border border-[#C5A46D]/30 hover:border-[#C5A46D]/70 rounded-2xl p-4 flex flex-col items-center justify-center transition-colors shadow-md">
+              <motion.div 
+                whileHover={{ y: -2 }}
+                className="apple-glass rounded-[22px] p-4 flex flex-col items-center justify-center transition-all shadow-lg border border-white/10"
+              >
                 <MapPin className="w-6 h-6 text-[#C5A46D] mb-1.5" />
                 <span className="text-[11px] text-[#E0D8CA]/80">محل برگزاری بزم</span>
                 <span className="text-xs sm:text-sm font-bold text-[#F5F0E8] mt-1 truncate max-w-full">
                   {wedding.hallName}
                 </span>
-              </div>
+              </motion.div>
             )}
           </div>
         )}
@@ -391,13 +417,13 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
         {hasDetailedTimes && (
           <div className="relative z-10 flex flex-wrap items-center justify-center gap-3 text-xs text-[#F5F0E8] my-4 font-vazir">
             {hasReception && (
-              <span className="bg-[#20231F]/60 px-4 py-1.5 rounded-full border border-[#C5A46D]/30 shadow-sm flex items-center gap-1.5">
+              <span className="apple-glass px-4 py-1.5 rounded-full border border-white/10 shadow-sm flex items-center gap-1.5">
                 <span>☕ پذیرایی:</span>
                 <span className="text-[#C5A46D] font-semibold">{wedding.receptionTime}</span>
               </span>
             )}
             {hasDinner && (
-              <span className="bg-[#20231F]/60 px-4 py-1.5 rounded-full border border-[#C5A46D]/30 shadow-sm flex items-center gap-1.5">
+              <span className="apple-glass px-4 py-1.5 rounded-full border border-white/10 shadow-sm flex items-center gap-1.5">
                 <span>🍽️ ضیافت شام:</span>
                 <span className="text-[#C5A46D] font-semibold">{wedding.dinnerTime}</span>
               </span>
@@ -415,7 +441,7 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
           </div>
         )}
 
-        {/* Smart Venue Routing & Navigation Bento (Only if venue info is provided) */}
+        {/* Smart Venue Routing & Navigation Bento */}
         {hasVenueLocation && (
           <div className="relative z-10">
             <LocationRouter
@@ -425,9 +451,9 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
           </div>
         )}
 
-        {/* Special Etiquette / Guest Notes (Only if filled) */}
+        {/* Special Etiquette / Guest Notes */}
         {hasGuestNotes && (
-          <div className="relative z-10 my-6 bg-[#20231F]/60 border border-[#C5A46D]/30 rounded-2xl p-4 sm:p-5 max-w-2xl mx-auto text-xs text-[#F5F0E8] leading-relaxed font-vazir shadow-inner">
+          <div className="relative z-10 my-6 apple-glass rounded-[24px] p-4 sm:p-5 max-w-2xl mx-auto text-xs text-[#F5F0E8] leading-relaxed font-vazir shadow-inner border border-white/10">
             <div className="text-[#E0D8CA] whitespace-pre-line leading-loose">
               {wedding.guestNotes}
             </div>
@@ -444,11 +470,11 @@ export const WeddingCardView: React.FC<WeddingCardViewProps> = ({
         </div>
 
         {/* Footer Signature */}
-        <div className="relative z-10 text-center pt-8 border-t border-[#C5A46D]/30 mt-8 font-vazir">
+        <div className="relative z-10 text-center pt-8 border-t border-[#C5A46D]/20 mt-8 font-vazir">
           <div className="text-[#C5A46D] font-amiri font-bold text-2xl sm:text-3xl mb-1">
             با آرزوی شادکامی، سلامتی و خوشبختی برای همه شما عزیزان
           </div>
-          <div className="font-cinzel text-[10px] sm:text-xs text-[#C5A46D]/80 tracking-[0.2em] uppercase mt-1">
+          <div className="font-cinzel text-[10px] sm:text-xs text-[#C5A46D]/80 tracking-[0.2em] uppercase mt-1 font-bold">
             CELEBRATING LOVE
           </div>
           <p className="text-[11px] text-[#E0D8CA] font-vazir mt-1">

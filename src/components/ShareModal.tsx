@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
   Copy, 
@@ -7,10 +8,7 @@ import {
   QrCode, 
   Send, 
   MessageSquare,
-  Smartphone,
-  ExternalLink,
-  MapPin,
-  Sparkles
+  Smartphone
 } from 'lucide-react';
 import { WeddingDetails } from '../types';
 import { getSocialShareLinks, getNavigationLinks, encodeWeddingToURL } from '../utils/cardUtils';
@@ -30,9 +28,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ wedding, isOpen, onClose
 
   const currentUrl = typeof window !== 'undefined' ? encodeWeddingToURL(wedding) : '';
   const socialLinks = getSocialShareLinks(wedding, currentUrl);
-  const navLinks = getNavigationLinks(wedding.hallLat, wedding.hallLng, wedding.hallName);
 
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(currentUrl)}&color=217-119-6&bgcolor=18-15-24`;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(currentUrl)}&color=245-192-66&bgcolor=24-27-22`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(currentUrl);
@@ -63,61 +60,69 @@ export const ShareModal: React.FC<ShareModalProps> = ({ wedding, isOpen, onClose
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div 
-        className="relative w-full max-w-lg bg-[#181525] border border-amber-500/30 rounded-3xl p-5 sm:p-7 text-amber-100 shadow-2xl overflow-y-auto max-h-[90vh]"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xl animate-in fade-in duration-200">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.94, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 20 }}
+        transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+        className="relative w-full max-w-lg apple-glass rounded-[32px] p-6 sm:p-8 text-[#F5F0E8] shadow-2xl overflow-y-auto max-h-[90vh] font-vazir"
         id="share-modal-container"
       >
-        {/* Close Button */}
-        <button
+        {/* Apple Close Button */}
+        <motion.button
+          whileTap={{ scale: 0.88 }}
           id="close-share-modal-btn"
           onClick={onClose}
-          className="absolute top-5 left-5 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-stone-400 hover:text-white transition-colors cursor-pointer"
+          className="absolute top-5 left-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-[#E0D8CA] hover:text-white transition-colors cursor-pointer"
         >
           <X className="w-4 h-4" />
-        </button>
+        </motion.button>
 
         {/* Modal Header */}
         <div className="text-center mb-6">
-          <div className="font-cinzel text-[10px] text-amber-400/80 tracking-[0.25em] uppercase mb-1">
+          <div className="font-cinzel text-[10px] text-[#C5A46D] tracking-[0.28em] uppercase mb-1 font-bold">
             SHARE INVITATION
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 mx-auto flex items-center justify-center text-amber-400 mb-3 shadow-inner">
+          <div className="w-12 h-12 rounded-2xl apple-glass-pill mx-auto flex items-center justify-center text-[#F5C042] mb-3 shadow-inner">
             <Share2 className="w-6 h-6" />
           </div>
-          <h3 className="font-amiri text-2xl sm:text-3xl font-bold gold-text-gradient">
+          <h3 className="font-amiri text-2xl sm:text-3xl font-bold text-[#F5F0E8]">
             اشتراک‌گذاری کارت دعوت و مکان تالار
           </h3>
-          <p className="text-xs text-stone-300/80 mt-1 font-vazir">
+          <p className="text-xs text-[#E0D8CA]/80 mt-1">
             ارسال آسان دعوت‌نامه برای مهمانان و بستگان در پیام‌رسان‌ها
           </p>
         </div>
 
-        {/* Smart Mobile Share Button (if supported) */}
-        <button
+        {/* Smart Mobile Share Button (Apple HIG Primary Action Button) */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.96 }}
           id="native-device-share-btn"
           onClick={handleNativeShare}
-          className="w-full mb-4 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-400 hover:from-amber-500 hover:to-yellow-300 text-stone-950 font-bold p-3.5 rounded-2xl text-sm transition-all shadow-lg active:scale-98 cursor-pointer"
+          className="w-full mb-4 flex items-center justify-center gap-2 bg-gradient-to-r from-[#F5C042] to-[#C5A46D] text-[#181B16] font-bold p-3.5 rounded-2xl text-sm transition-all shadow-lg cursor-pointer"
         >
-          <Smartphone className="w-5 h-5 text-stone-950" />
+          <Smartphone className="w-5 h-5 text-[#181B16]" />
           <span>اشتراک‌گذاری هوشمند در گوشی (Web Share)</span>
-        </button>
+        </motion.button>
 
         {/* Link Copy Box */}
-        <div className="bg-[#120f1e] border border-amber-500/20 rounded-2xl p-3 mb-5">
-          <label className="text-[11px] text-amber-300/90 font-medium mb-1.5 block">
+        <div className="bg-black/35 border border-white/10 rounded-2xl p-3.5 mb-5">
+          <label className="text-[11px] text-[#C5A46D] font-medium mb-1.5 block">
             لینک اختصاصی کارت دعوت شما:
           </label>
           <div className="flex items-center gap-2">
             <input
               readOnly
               value={currentUrl}
-              className="w-full bg-black/40 border border-stone-700/50 rounded-xl px-3 py-2 text-xs text-stone-300 font-mono text-left focus:outline-none select-all"
+              className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-[#E0D8CA] font-mono text-left focus:outline-none select-all"
             />
-            <button
+            <motion.button
+              whileTap={{ scale: 0.92 }}
               id="copy-card-url-btn"
               onClick={handleCopyLink}
-              className="flex items-center gap-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-3 py-2 rounded-xl text-xs flex-shrink-0 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 bg-[#C5A46D]/20 hover:bg-[#C5A46D]/30 text-[#F5C042] border border-[#C5A46D]/40 px-3 py-2 rounded-xl text-xs flex-shrink-0 transition-colors cursor-pointer"
             >
               {copiedLink ? (
                 <>
@@ -130,126 +135,145 @@ export const ShareModal: React.FC<ShareModalProps> = ({ wedding, isOpen, onClose
                   <span>کپی لینک</span>
                 </>
               )}
-            </button>
+            </motion.button>
           </div>
         </div>
 
         {/* Social Platforms Direct Grid */}
         <div className="mb-6">
-          <span className="text-xs font-semibold text-stone-300 block mb-3">
+          <span className="text-xs font-semibold text-[#F5F0E8] block mb-3">
             ارسال مستقیم به پیام‌رسان‌ها:
           </span>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             {/* WhatsApp */}
-            <a
+            <motion.a
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.95 }}
               id="modal-share-whatsapp"
               href={socialLinks.whatsapp}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-[#143321] hover:bg-[#1a442c] text-emerald-200 border border-emerald-500/30 p-2.5 rounded-xl text-xs transition-all shadow-sm"
+              className="flex items-center gap-2 bg-[#143321]/80 hover:bg-[#1a442c] text-emerald-200 border border-emerald-500/30 p-2.5 rounded-2xl text-xs transition-all shadow-sm"
             >
               <div className="w-6 h-6 rounded-full bg-emerald-500 text-stone-950 flex items-center justify-center font-bold text-[10px]">
                 W
               </div>
               <span className="font-medium">واتساپ (WhatsApp)</span>
-            </a>
+            </motion.a>
 
             {/* Telegram */}
-            <a
+            <motion.a
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.95 }}
               id="modal-share-telegram"
               href={socialLinks.telegram}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-[#162e40] hover:bg-[#1f4058] text-sky-200 border border-sky-500/30 p-2.5 rounded-xl text-xs transition-all shadow-sm"
+              className="flex items-center gap-2 bg-[#162e40]/80 hover:bg-[#1f4058] text-sky-200 border border-sky-500/30 p-2.5 rounded-2xl text-xs transition-all shadow-sm"
             >
               <Send className="w-4 h-4 text-sky-400" />
               <span className="font-medium">تلگرام (Telegram)</span>
-            </a>
+            </motion.a>
 
             {/* Eitaa */}
-            <a
+            <motion.a
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.95 }}
               id="modal-share-eitaa"
               href={socialLinks.eitaa}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-[#362414] hover:bg-[#4d331d] text-amber-200 border border-amber-500/30 p-2.5 rounded-xl text-xs transition-all shadow-sm"
+              className="flex items-center gap-2 bg-[#362414]/80 hover:bg-[#4d331d] text-[#F5C042] border border-[#C5A46D]/30 p-2.5 rounded-2xl text-xs transition-all shadow-sm"
             >
-              <div className="w-5 h-5 rounded-full bg-amber-500 text-stone-950 flex items-center justify-center font-bold text-[10px]">
+              <div className="w-5 h-5 rounded-full bg-[#F5C042] text-stone-950 flex items-center justify-center font-bold text-[10px]">
                 ای
               </div>
               <span className="font-medium">پیام‌رسان ایتا</span>
-            </a>
+            </motion.a>
 
             {/* Bale */}
-            <a
+            <motion.a
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.95 }}
               id="modal-share-bale"
               href={socialLinks.bale}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-[#122e2e] hover:bg-[#1c4545] text-teal-200 border border-teal-500/30 p-2.5 rounded-xl text-xs transition-all shadow-sm"
+              className="flex items-center gap-2 bg-[#122e2e]/80 hover:bg-[#1c4545] text-teal-200 border border-teal-500/30 p-2.5 rounded-2xl text-xs transition-all shadow-sm"
             >
               <div className="w-5 h-5 rounded-full bg-teal-400 text-stone-950 flex items-center justify-center font-bold text-[10px]">
                 ب
               </div>
               <span className="font-medium">پیام‌رسان بله</span>
-            </a>
+            </motion.a>
 
             {/* SMS */}
-            <a
+            <motion.a
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.95 }}
               id="modal-share-sms"
               href={socialLinks.sms}
-              className="flex items-center gap-2 bg-[#2a1d3d] hover:bg-[#3b2956] text-purple-200 border border-purple-500/30 p-2.5 rounded-xl text-xs transition-all shadow-sm"
+              className="flex items-center gap-2 bg-[#2a1d3d]/80 hover:bg-[#3b2956] text-purple-200 border border-purple-500/30 p-2.5 rounded-2xl text-xs transition-all shadow-sm"
             >
               <MessageSquare className="w-4 h-4 text-purple-400" />
               <span className="font-medium">پیامک (SMS)</span>
-            </a>
+            </motion.a>
 
             {/* QR Code Toggle */}
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
               id="modal-share-qr-btn"
               onClick={() => setShowQR(!showQR)}
-              className={`flex items-center gap-2 border p-2.5 rounded-xl text-xs transition-all shadow-sm cursor-pointer ${
+              className={`flex items-center gap-2 border p-2.5 rounded-2xl text-xs transition-all shadow-sm cursor-pointer ${
                 showQR
-                  ? 'bg-amber-500 text-stone-950 border-amber-400 font-bold'
-                  : 'bg-stone-800/80 hover:bg-stone-700/80 text-amber-300 border-amber-500/30 font-medium'
+                  ? 'bg-[#F5C042] text-[#181B16] border-[#C5A46D] font-bold'
+                  : 'apple-glass text-[#F5C042] border-white/10 font-medium'
               }`}
             >
               <QrCode className="w-4 h-4" />
               <span>{showQR ? 'بستن بارکد' : 'بارکد QR کارت'}</span>
-            </button>
+            </motion.button>
           </div>
         </div>
 
         {/* QR Code Display section */}
-        {showQR && (
-          <div className="my-4 p-4 bg-[#120f1e] border border-amber-500/30 rounded-2xl text-center animate-in zoom-in-95 duration-200">
-            <div className="text-xs text-amber-300 font-medium mb-3">
-              بارکد اختصاصی کارت دعوت (اسکن با دوربین گوشی):
-            </div>
-            <div className="inline-block p-3 bg-white rounded-2xl shadow-xl">
-              <img
-                src={qrImageUrl}
-                alt="QR Code کارت دعوت"
-                className="w-44 h-44 rounded-lg object-contain mx-auto"
-              />
-            </div>
-            <p className="text-[10px] text-stone-400 mt-2">
-              می‌توانید این بارکد را ذخیره کرده و روی کارت چاپی یا استوری اینستاگرام قرار دهید.
-            </p>
-          </div>
-        )}
+        <AnimatePresence>
+          {showQR && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="my-4 p-4 bg-black/40 border border-[#C5A46D]/30 rounded-2xl text-center"
+            >
+              <div className="text-xs text-[#C5A46D] font-medium mb-3">
+                بارکد اختصاصی کارت دعوت (اسکن با دوربین گوشی):
+              </div>
+              <div className="inline-block p-3 bg-[#181B16] rounded-2xl shadow-xl border border-[#C5A46D]/30">
+                <img
+                  src={qrImageUrl}
+                  alt="QR Code کارت دعوت"
+                  className="w-44 h-44 rounded-xl object-contain mx-auto"
+                />
+              </div>
+              <p className="text-[10px] text-[#E0D8CA]/80 mt-2">
+                می‌توانید این بارکد را ذخیره کرده و روی کارت چاپی یا استوری اینستاگرام قرار دهید.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Full Text Copy Button */}
-        <div className="pt-3 border-t border-amber-500/20 flex items-center justify-between">
-          <span className="text-[11px] text-stone-400">
+        <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+          <span className="text-[11px] text-[#E0D8CA]/70">
             شامل تاریخ، ساعت، نام و لوکیشن تالار
           </span>
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.92 }}
             id="copy-full-text-btn"
             onClick={handleCopyInvitationText}
-            className="flex items-center gap-1.5 bg-white/5 hover:bg-white/10 text-stone-200 border border-stone-600/40 px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 apple-glass text-[#F5F0E8] border border-white/10 px-3.5 py-1.5 rounded-full text-xs transition-colors cursor-pointer"
           >
             {copiedText ? (
               <>
@@ -258,13 +282,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({ wedding, isOpen, onClose
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5 text-stone-400" />
+                <Copy className="w-3.5 h-3.5 text-[#C5A46D]" />
                 <span>کپی کل متن دعوت</span>
               </>
             )}
-          </button>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
