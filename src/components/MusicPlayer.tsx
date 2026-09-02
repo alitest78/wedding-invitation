@@ -13,6 +13,7 @@ interface MusicPlayerProps {
   autoPlayOnEnter?: boolean;
   musicVolume?: number;
   musicLoop?: boolean;
+  isGuestMode?: boolean;
   onTrackChange?: (track: MusicTrack) => void;
 }
 
@@ -24,6 +25,7 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
   autoPlayOnEnter = true,
   musicVolume = 0.85,
   musicLoop = true,
+  isGuestMode = false,
   onTrackChange,
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -334,18 +336,20 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
               <SlidersHorizontal className="w-3.5 h-3.5" />
             </motion.button>
 
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.88 }}
-              id="music-playlist-toggle-btn"
-              onClick={() => setShowTrackList(!showTrackList)}
-              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-                showTrackList ? 'bg-[#B88728] text-white font-bold' : 'text-[#556251] hover:bg-black/5'
-              }`}
-              title="لیست ترانه‌ها"
-            >
-              <ListMusic className="w-3.5 h-3.5" />
-            </motion.button>
+            {!isGuestMode && onTrackChange && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.88 }}
+                id="music-playlist-toggle-btn"
+                onClick={() => setShowTrackList(!showTrackList)}
+                className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                  showTrackList ? 'bg-[#B88728] text-white font-bold' : 'text-[#556251] hover:bg-black/5'
+                }`}
+                title="لیست ترانه‌ها"
+              >
+                <ListMusic className="w-3.5 h-3.5" />
+              </motion.button>
+            )}
           </div>
         </div>
 
@@ -380,9 +384,9 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({
           )}
         </AnimatePresence>
 
-        {/* Track Selection Dropdown (Apple iOS Menu Style) */}
+        {/* Track Selection Dropdown (Apple iOS Menu Style - Host only) */}
         <AnimatePresence>
-          {showTrackList && (
+          {!isGuestMode && showTrackList && (
             <motion.div
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}

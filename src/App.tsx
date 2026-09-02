@@ -250,6 +250,7 @@ export default function App() {
         autoPlayOnEnter={wedding.autoPlayOnEnter ?? true}
         musicVolume={wedding.musicVolume ?? 0.85}
         musicLoop={wedding.musicLoop ?? true}
+        isGuestMode={isGuestMode}
         onTrackChange={handleTrackChange}
       />
 

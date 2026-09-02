@@ -64,12 +64,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [showQR, setShowQR] = useState(false);
   const [showAdminLink, setShowAdminLink] = useState(false);
 
-  // Generate URL automatically on open
+  // Generate URL automatically on open for host only
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isGuestMode) {
       generateLink(selectedService, customSlug);
     }
-  }, [isOpen, wedding]);
+  }, [isOpen, wedding, isGuestMode]);
 
   const generateLink = async (serviceType: ShortenerType, slug?: string) => {
     setIsGeneratingShortLink(true);
@@ -131,8 +131,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     ? getAdminInvitationUrl(wedding, currentShortId) 
     : '';
 
-  // Use the active unblocked URL for social shares and guest invitations
-  const activeShareUrl = ultraShortUrl || directGuestUrl;
+  // Use current URL in guest mode, or active unblocked URL for host
+  const activeShareUrl = isGuestMode && typeof window !== 'undefined'
+    ? window.location.href
+    : (ultraShortUrl || directGuestUrl);
   const socialLinks = getSocialShareLinks(wedding, activeShareUrl);
 
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(activeShareUrl)}&color=184-135-40&bgcolor=250-246-238`;
@@ -196,67 +198,69 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         {/* Modal Header */}
         <div className="text-center mb-5">
           <div className="font-cinzel text-[10px] text-[#946F29] tracking-[0.28em] uppercase mb-1 font-bold">
-            UNBLOCKED SHORT LINK & SHARING
+            {isGuestMode ? 'SHARE INVITATION' : 'UNBLOCKED SHORT LINK & SHARING'}
           </div>
           <div className="w-12 h-12 rounded-2xl bg-[#F0E6D2] mx-auto flex items-center justify-center text-[#B88728] mb-2.5 shadow-inner border border-[#B89355]/30">
-            <ShieldCheck className="w-6 h-6 text-emerald-600" />
+            {isGuestMode ? <Sparkles className="w-6 h-6 text-[#B88728]" /> : <ShieldCheck className="w-6 h-6 text-emerald-600" />}
           </div>
           <h3 className="font-amiri text-2xl sm:text-3xl font-bold text-[#1C221A]">
-            لینک کوتاه کارت عروسی
+            {isGuestMode ? 'ارسال و اشتراک‌گذاری کارت' : 'لینک کوتاه کارت عروسی'}
           </h3>
           <p className="text-xs text-[#556251] mt-1 flex items-center justify-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>بدون فیلتر و با سرعت بالا در تمام اپراتورهای ایران (همراه اول، ایرانسل، رایتل و مخابرات)</span>
+            <span>{isGuestMode ? 'کارت دعوت را به سادگی برای دوستان و آشنایان بفرستید' : 'بدون فیلتر و با سرعت بالا در تمام اپراتورهای ایران'}</span>
           </p>
         </div>
 
-        {/* Shortener Provider Selector Tabs */}
-        <div className="mb-3.5 bg-white/70 p-1.5 rounded-2xl border border-[#B89355]/25 flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => handleSwitchService('clck')}
-            className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
-              selectedService === 'clck'
-                ? 'bg-[#B88728] text-white shadow-sm'
-                : 'text-[#556251] hover:text-[#1C221A] hover:bg-white/50'
-            }`}
-          >
-            <Zap className="w-3 h-3" />
-            <span>clck.ru (کوتاه بدون فیلتر)</span>
-          </button>
+        {/* Shortener Provider Selector Tabs (Host Only) */}
+        {!isGuestMode && (
+          <div className="mb-3.5 bg-white/70 p-1.5 rounded-2xl border border-[#B89355]/25 flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => handleSwitchService('clck')}
+              className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                selectedService === 'clck'
+                  ? 'bg-[#B88728] text-white shadow-sm'
+                  : 'text-[#556251] hover:text-[#1C221A] hover:bg-white/50'
+              }`}
+            >
+              <Zap className="w-3 h-3" />
+              <span>clck.ru (کوتاه بدون فیلتر)</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleSwitchService('direct')}
-            className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
-              selectedService === 'direct'
-                ? 'bg-[#B88728] text-white shadow-sm'
-                : 'text-[#556251] hover:text-[#1C221A] hover:bg-white/50'
-            }`}
-          >
-            <Globe className="w-3 h-3" />
-            <span>دامنه مستقیم کارت</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleSwitchService('direct')}
+              className={`flex-1 py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                selectedService === 'direct'
+                  ? 'bg-[#B88728] text-white shadow-sm'
+                  : 'text-[#556251] hover:text-[#1C221A] hover:bg-white/50'
+              }`}
+            >
+              <Globe className="w-3 h-3" />
+              <span>دامنه مستقیم کارت</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleSwitchService('isgd')}
-            className={`py-1.5 px-2.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
-              selectedService === 'isgd'
-                ? 'bg-[#B88728] text-white shadow-sm'
-                : 'text-[#556251] hover:text-[#1C221A] hover:bg-white/50'
-            }`}
-          >
-            <span>is.gd</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => handleSwitchService('isgd')}
+              className={`py-1.5 px-2.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                selectedService === 'isgd'
+                  ? 'bg-[#B88728] text-white shadow-sm'
+                  : 'text-[#556251] hover:text-[#1C221A] hover:bg-white/50'
+              }`}
+            >
+              <span>is.gd</span>
+            </button>
+          </div>
+        )}
 
         {/* Main Unblocked Short Link Card */}
         <div className="bg-gradient-to-br from-[#FFF9EE] to-[#F5EBD7] border-2 border-[#B88728]/60 rounded-2xl p-4 sm:p-5 mb-4 shadow-md relative overflow-hidden">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-1.5 text-xs font-bold text-[#855E1C]">
               <Sparkles className="w-4 h-4 text-[#B88728]" />
-              <span>لینک کوتاه اختصاصی مهمانان:</span>
+              <span>{isGuestMode ? 'لینک کارت دعوت:' : 'لینک کوتاه اختصاصی مهمانان:'}</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300 flex items-center gap-1">
@@ -273,10 +277,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             <div className="relative w-full">
               <input
                 readOnly
-                value={activeShareUrl}
+                value={isGuestMode && typeof window !== 'undefined' ? window.location.href : activeShareUrl}
                 className="w-full bg-white border border-[#B89355]/40 rounded-xl px-3 py-2.5 text-xs text-[#1C221A] font-mono text-left focus:outline-none select-all shadow-inner font-semibold tracking-tight"
               />
-              {isGeneratingShortLink && (
+              {!isGuestMode && isGeneratingShortLink && (
                 <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-[#B88728] bg-white/95 px-2 py-1 rounded-md shadow-sm border border-[#B89355]/20">
                   <RefreshCw className="w-3 h-3 animate-spin" />
                   <span>در حال ایجاد لینک کوتاه...</span>
@@ -304,28 +308,30 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             </motion.button>
           </div>
 
-          {/* Action Bar: Custom Name & Refresh */}
-          <div className="pt-2 border-t border-[#B89355]/20 flex items-center justify-between gap-2 flex-wrap text-[11px]">
-            <button
-              type="button"
-              onClick={() => setIsCustomizing(!isCustomizing)}
-              className="text-[#855E1C] hover:text-[#5B3E0C] font-bold flex items-center gap-1 cursor-pointer"
-            >
-              <Edit2 className="w-3 h-3" />
-              <span>{isCustomizing ? 'بستن تنظیم نام دلخواه' : 'تنظیم آدرس دلخواه (مثلاً ali-zahra)'}</span>
-            </button>
+          {/* Action Bar: Custom Name & Refresh (Host Only) */}
+          {!isGuestMode && (
+            <div className="pt-2 border-t border-[#B89355]/20 flex items-center justify-between gap-2 flex-wrap text-[11px]">
+              <button
+                type="button"
+                onClick={() => setIsCustomizing(!isCustomizing)}
+                className="text-[#855E1C] hover:text-[#5B3E0C] font-bold flex items-center gap-1 cursor-pointer"
+              >
+                <Edit2 className="w-3 h-3" />
+                <span>{isCustomizing ? 'بستن تنظیم نام دلخواه' : 'تنظیم آدرس دلخواه (مثلاً ali-zahra)'}</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => generateLink(selectedService, customSlug)}
-              disabled={isGeneratingShortLink}
-              className="text-[#556251] hover:text-[#1C221A] flex items-center gap-1 cursor-pointer disabled:opacity-50"
-              title="تولید مجدد لینک"
-            >
-              <RefreshCw className={`w-3 h-3 ${isGeneratingShortLink ? 'animate-spin' : ''}`} />
-              <span>تازه‌سازی</span>
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => generateLink(selectedService, customSlug)}
+                disabled={isGeneratingShortLink}
+                className="text-[#556251] hover:text-[#1C221A] flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                title="تولید مجدد لینک"
+              >
+                <RefreshCw className={`w-3 h-3 ${isGeneratingShortLink ? 'animate-spin' : ''}`} />
+                <span>تازه‌سازی</span>
+              </button>
+            </div>
+          )}
 
           {/* Custom Slug Form */}
           <AnimatePresence>
